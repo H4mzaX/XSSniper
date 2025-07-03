@@ -31,91 +31,12 @@ warnings.filterwarnings("ignore")
 # Initialize colorama
 init(autoreset=True)
 
-class LicenseManager:
-    """Advanced license verification and anti-tampering system"""
-    
-    def __init__(self):
-        self.machine_id = self._get_machine_id()
-        self.license_key = None
-        self.verified = False
-        
-    def _get_machine_id(self):
-        """Generate unique machine identifier"""
-        try:
-            # Combine multiple system identifiers
-            identifiers = [
-                platform.node(),
-                platform.machine(),
-                platform.processor(),
-                str(uuid.getnode()),
-                platform.platform()
-            ]
-            combined = ''.join(identifiers).encode()
-            return hashlib.sha256(combined).hexdigest()[:16]
-        except:
-            return "unknown_machine"
-    
-    def verify_license(self, license_key=None):
-        """Verify license key and system integrity"""
-        if not license_key:
-            # Check for license file
-            license_file = os.path.join(os.path.dirname(__file__), '.xss_license')
-            if os.path.exists(license_file):
-                try:
-                    with open(license_file, 'r') as f:
-                        license_key = f.read().strip()
-                except:
-                    pass
-        
-        if not license_key:
-            print(f"{Fore.RED}[!] License key required for operation")
-            print(f"{Fore.YELLOW}[i] Contact developer for licensing information")
-            return False
-        
-        # Verify license format and validity
-        try:
-            decoded = base64.b64decode(license_key).decode()
-            license_data = json.loads(decoded)
-            
-            # Check expiration
-            if license_data.get('expires', 0) < time.time():
-                print(f"{Fore.RED}[!] License expired")
-                return False
-            
-            # Verify HMAC
-            expected_hmac = license_data.pop('signature', '')
-            actual_hmac = hmac.new(
-                b'xss_sniper_2025_protect',
-                json.dumps(license_data, sort_keys=True).encode(),
-                hashlib.sha256
-            ).hexdigest()
-            
-            if not hmac.compare_digest(expected_hmac, actual_hmac):
-                print(f"{Fore.RED}[!] Invalid license signature")
-                return False
-            
-            self.verified = True
-            return True
-            
-        except Exception as e:
-            print(f"{Fore.RED}[!] License verification failed")
-            return False
-    
-    def runtime_check(self):
-        """Runtime integrity verification"""
-        if not self.verified:
-            print(f"{Fore.RED}[!] Runtime verification failed")
-            sys.exit(1)
+# License system removed - XSSniper is now open source and free for everyone
 
 class AdvancedXSSScanner:
     """Enhanced XSS Scanner with modern detection capabilities"""
     
     def __init__(self, target_url, **kwargs):
-        # Verify license first
-        self.license_mgr = LicenseManager()
-        if not self.license_mgr.verify_license():
-            sys.exit(1)
-        
         self.target_url = target_url
         self.threads = kwargs.get('threads', 20)
         self.delay = kwargs.get('delay', 0)
@@ -291,9 +212,7 @@ class AdvancedXSSScanner:
             await self.session.close()
 
     def log(self, message, level="INFO"):
-        """Enhanced logging with protection checks"""
-        self.license_mgr.runtime_check()
-        
+        """Enhanced logging function"""
         timestamp = time.strftime("%H:%M:%S")
         colors = {
             "INFO": Fore.CYAN,

@@ -4,7 +4,7 @@ Advanced Parameter Discovery Tool - XSSniper Module
 Professional Security Testing Framework
 Developed by H4mzaX
 
-Protected Software - License verification required
+Open Source Tool - Free for everyone to use
 """
 
 import hashlib
