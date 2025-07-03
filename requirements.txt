@@ -1,6 +1,12 @@
 # XSSniper - Advanced XSS Scanner Dependencies
 # Enhanced for 2025 with modern security testing capabilities
 
+# Installation Instructions:
+# For systems with externally-managed environments (Ubuntu 24+, Debian 12+):
+# Method 1: pip install --break-system-packages -r requirements.txt
+# Method 2: python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt
+# Method 3: pipx install -r requirements.txt (if available)
+
 # Core HTTP and async libraries
 aiohttp>=3.9.0
 asyncio-throttle>=1.0.2
@@ -15,38 +21,13 @@ urllib3>=2.0.0
 # Terminal output and colors
 colorama>=0.4.6
 
-# JSON handling (built-in but specified for compatibility)
-# json (built-in)
+# HTTP requests library (fallback/compatibility)
+requests>=2.31.0
 
-# Regular expressions (built-in)
-# re (built-in)
+# Optional dependencies (install separately if needed)
+# selenium>=4.15.0  # For browser verification (optional)
+# Uncomment above line if you want browser verification features
 
-# Command line argument parsing (built-in)
-# argparse (built-in)
-
-# System information and platform detection (built-in)
-# platform (built-in)
-# uuid (built-in)
-# os (built-in)
-# sys (built-in)
-
-# Cryptographic functions (built-in)
-# hashlib (built-in)
-# hmac (built-in)
-# base64 (built-in)
-
-# Time handling (built-in)
-# time (built-in)
-
-# Threading and concurrency (built-in)
-# concurrent.futures (built-in)
-
-# Random number generation (built-in)
-# random (built-in)
-
-# File operations (built-in)
-# warnings (built-in)
-
-# Optional dependencies for enhanced features
-requests>=2.31.0  # Fallback HTTP library
-selenium>=4.15.0  # Browser automation (optional)
+# Note: The following are built-in Python modules (no installation needed):
+# json, re, argparse, platform, uuid, os, sys, hashlib, hmac, base64, time
+# concurrent.futures, random, warnings, asyncio

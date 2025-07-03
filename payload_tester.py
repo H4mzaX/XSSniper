@@ -394,7 +394,7 @@ class AdvancedPayloadTester:
         
         # 6. Framework-specific detection
         framework_patterns = [
-            f'dangerouslySetInnerHTML[^}]*{unique_id}',
+            f'dangerouslySetInnerHTML[^}}]*{unique_id}',
             f'v-html[^>]*{unique_id}',
             f'\\[innerHTML\\][^>]*{unique_id}'
         ]

@@ -319,57 +319,44 @@ class AdvancedXSSScanner:
             return {'vulnerable': False}
 
     def is_xss_reflected(self, response_text, unique_id, content_type, payload):
-        """Enhanced XSS reflection detection with context analysis"""
+        """Enhanced XSS reflection detection with context analysis - Fixed for accuracy"""
         if unique_id not in response_text:
             return False
         
-        # Check for dangerous contexts
+        # Don't flag JSON responses as XSS (like httpbin.org)
+        if 'application/json' in content_type.lower():
+            return False
+        
+        # Check for actual XSS execution contexts, not just reflection
         dangerous_contexts = [
-            f'<script>{unique_id}',
-            f'<script>alert("{unique_id}")',
-            f'onerror=alert("{unique_id}")',
-            f'onload=alert("{unique_id}")',
-            f'javascript:alert("{unique_id}")',
-            f'<svg onload=alert("{unique_id}")',
-            f'<img src=x onerror=alert("{unique_id}")',
-            f'<iframe srcdoc=',
-            f'dangerouslySetInnerHTML',
-            f'eval(',
-            f'Function(',
-            f'setTimeout(',
-            f'setInterval('
+            f'<script[^>]*>{unique_id}',
+            f'<script[^>]*>.*{unique_id}.*</script>',
+            f'onerror\\s*=\\s*["\']?[^"\']*{unique_id}',
+            f'onload\\s*=\\s*["\']?[^"\']*{unique_id}',
+            f'<svg[^>]*onload\\s*=\\s*["\']?[^"\']*{unique_id}',
+            f'<img[^>]*onerror\\s*=\\s*["\']?[^"\']*{unique_id}',
+            f'javascript:\\s*[^"\']*{unique_id}',
+            f'<iframe[^>]*srcdoc\\s*=\\s*["\'][^"\']*<script[^>]*>{unique_id}'
         ]
         
-        # Check for dangerous contexts
-        for context in dangerous_contexts:
-            if context in response_text:
+        # Only flag if payload is actually in executable context
+        for pattern in dangerous_contexts:
+            if re.search(pattern, response_text, re.IGNORECASE | re.DOTALL):
                 return True
         
-        # DOM-based XSS detection
-        if 'text/html' in content_type.lower():
-            # Look for script execution contexts
-            script_patterns = [
-                f'<script[^>]*>{unique_id}',
-                f'<[^>]+on\\w+=[^>]*{unique_id}',
-                f'javascript:[^"\']*{unique_id}',
-                f'<svg[^>]*onload=[^>]*{unique_id}',
-                f'<iframe[^>]*srcdoc=[^>]*{unique_id}'
+        # Check if the payload itself (not just unique_id) is reflected in dangerous context
+        if payload in response_text:
+            # Look for actual script execution patterns with the payload
+            payload_patterns = [
+                f'<script[^>]*>.*{re.escape(payload)}.*</script>',
+                f'<[^>]+on\\w+\\s*=\\s*["\']?[^"\']*{re.escape(payload)}',
+                f'javascript:\\s*[^"\']*{re.escape(payload)}',
+                f'<svg[^>]*onload\\s*=\\s*["\']?[^"\']*{re.escape(payload)}'
             ]
             
-            for pattern in script_patterns:
-                if re.search(pattern, response_text, re.IGNORECASE):
+            for pattern in payload_patterns:
+                if re.search(pattern, response_text, re.IGNORECASE | re.DOTALL):
                     return True
-        
-        # Template literal detection
-        template_patterns = [
-            f'\\${{[^}}]*{unique_id}[^}}]*}}',
-            f'`[^`]*{unique_id}[^`]*`',
-            f'eval\\([^)]*{unique_id}[^)]*\\)'
-        ]
-        
-        for pattern in template_patterns:
-            if re.search(pattern, response_text, re.IGNORECASE):
-                return True
         
         return False
 
