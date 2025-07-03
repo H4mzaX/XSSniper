@@ -1,4 +1,587 @@
 #!/usr/bin/env python3
-# Obfuscated with custom obfuscator
+"""
+Advanced Parameter Discovery Tool - XSSniper Module
+Professional Security Testing Framework
+Developed by H4mzaX
+
+Protected Software - License verification required
+"""
+
+import hashlib
+import hmac
+import time
 import base64
-exec(base64.b64decode('IyEvdXNyL2Jpbi9lbnYgcHl0aG9uMwoiIiIKUGFyYW1ldGVyIERpc2NvdmVyeSBUb29sIC0gRmluZCBwb3RlbnRpYWwgcGFyYW1ldGVycyBmb3IgWFNTIHRlc3RpbmcKIiIiCgppbXBvcnQgcmVxdWVzdHMKaW1wb3J0IGFyZ3BhcnNlCmltcG9ydCB0aW1lCmZyb20gY29sb3JhbWEgaW1wb3J0IEZvcmUsIFN0eWxlLCBpbml0CmZyb20gdXJsbGliLnBhcnNlIGltcG9ydCB1cmxwYXJzZSwgdXJsam9pbgpmcm9tIGJzNCBpbXBvcnQgQmVhdXRpZnVsU291cAppbXBvcnQgcmUKCmluaXQoYXV0b3Jlc2V0PVRydWUpCgpjbGFzcyBQYXJhbURpc2NvdmVyeToKICAgIGRlZiBfX2luaXRfXyhzZWxmLCB0YXJnZXRfdXJsLCB1c2VyX2FnZW50PU5vbmUsIHRpbWVvdXQ9MTApOgogICAgICAgIHNlbGYudGFyZ2V0X3VybCA9IHRhcmdldF91cmwKICAgICAgICBzZWxmLnRpbWVvdXQgPSB0aW1lb3V0CiAgICAgICAgc2VsZi5zZXNzaW9uID0gcmVxdWVzdHMuU2Vzc2lvbigpCiAgICAgICAgc2VsZi5kaXNjb3ZlcmVkX3BhcmFtcyA9IHNldCgpCiAgICAgICAgCiAgICAgICAgaWYgdXNlcl9hZ2VudDoKICAgICAgICAgICAgc2VsZi5zZXNzaW9uLmhlYWRlcnMudXBkYXRlKHsnVXNlci1BZ2VudCc6IHVzZXJfYWdlbnR9KQogICAgICAgIGVsc2U6CiAgICAgICAgICAgIHNlbGYuc2Vzc2lvbi5oZWFkZXJzLnVwZGF0ZSh7CiAgICAgICAgICAgICAgICAnVXNlci1BZ2VudCc6ICdNb3ppbGxhLzUuMCAoV2luZG93cyBOVCAxMC4wOyBXaW42NDsgeDY0KSBBcHBsZVdlYktpdC81MzcuMzYnCiAgICAgICAgICAgIH0pCgogICAgZGVmIGxvZyhzZWxmLCBtZXNzYWdlLCBsZXZlbD0iSU5GTyIpOgogICAgICAgICIiIkxvZ2dpbmcgZnVuY3Rpb24iIiIKICAgICAgICB0aW1lc3RhbXAgPSB0aW1lLnN0cmZ0aW1lKCIlSDolTTolUyIpCiAgICAgICAgaWYgbGV2ZWwgPT0gIklORk8iOgogICAgICAgICAgICBjb2xvciA9IEZvcmUuQ1lBTgogICAgICAgIGVsaWYgbGV2ZWwgPT0gIlNVQ0NFU1MiOgogICAgICAgICAgICBjb2xvciA9IEZvcmUuR1JFRU4KICAgICAgICBlbGlmIGxldmVsID09ICJXQVJOSU5HIjoKICAgICAgICAgICAgY29sb3IgPSBGb3JlLllFTExPVwogICAgICAgIGVsaWYgbGV2ZWwgPT0gIkVSUk9SIjoKICAgICAgICAgICAgY29sb3IgPSBGb3JlLlJFRAogICAgICAgIGVsc2U6CiAgICAgICAgICAgIGNvbG9yID0gRm9yZS5XSElURQogICAgICAgICAgICAKICAgICAgICBwcmludChmIntjb2xvcn1be3RpbWVzdGFtcH1dIFt7bGV2ZWx9XSB7bWVzc2FnZX0iKQoKICAgIGRlZiB0ZXN0X2NvbW1vbl9wYXJhbWV0ZXJzKHNlbGYpOgogICAgICAgICIiIlRlc3QgY29tbW9uIHBhcmFtZXRlciBuYW1lcyIiIgogICAgICAgIHNlbGYubG9nKCJUZXN0aW5nIGNvbW1vbiBwYXJhbWV0ZXIgbmFtZXMuLi4iLCAiSU5GTyIpCiAgICAgICAgCiAgICAgICAgY29tbW9uX3BhcmFtcyA9IFsKICAgICAgICAgICAgIyBTZWFyY2ggYW5kIHF1ZXJ5IHBhcmFtZXRlcnMKICAgICAgICAgICAgJ3EnLCAncXVlcnknLCAnc2VhcmNoJywgJ2tleXdvcmQnLCAndGVybScsICdmaW5kJywgJ2xvb2t1cCcsCiAgICAgICAgICAgIAogICAgICAgICAgICAjIE5hdmlnYXRpb24gcGFyYW1ldGVycwogICAgICAgICAgICAnaWQnLCAncGFnZScsICd2aWV3JywgJ2FjdGlvbicsICdjbWQnLCAnZnVuY3Rpb24nLCAnbWV0aG9kJywKICAgICAgICAgICAgCiAgICAgICAgICAgICMgQ29udGVudCBwYXJhbWV0ZXJzCiAgICAgICAgICAgICduYW1lJywgJ3RpdGxlJywgJ2NvbnRlbnQnLCAnZGF0YScsICd0ZXh0JywgJ21lc3NhZ2UnLCAnY29tbWVudCcsCiAgICAgICAgICAgIAogICAgICAgICAgICAjIFVzZXIgcGFyYW1ldGVycwogICAgICAgICAgICAndXNlcicsICd1c2VybmFtZScsICdlbWFpbCcsICdsb2dpbicsICdhY2NvdW50JywgJ3Byb2ZpbGUnLAogICAgICAgICAgICAKICAgICAgICAgICAgIyBGaWxlIHBhcmFtZXRlcnMKICAgICAgICAgICAgJ2ZpbGUnLCAnZmlsZW5hbWUnLCAncGF0aCcsICdkaXInLCAnZm9sZGVyJywgJ2RvY3VtZW50JywKICAgICAgICAgICAgCiAgICAgICAgICAgICMgQ2F0ZWdvcnkgcGFyYW1ldGVycwogICAgICAgICAgICAnY2F0JywgJ2NhdGVnb3J5JywgJ3R5cGUnLCAnY2xhc3MnLCAnZ3JvdXAnLCAnc2VjdGlvbicsCiAgICAgICAgICAgIAogICAgICAgICAgICAjIE5hdmlnYXRpb24gcGFyYW1ldGVycwogICAgICAgICAgICAnbmV4dCcsICdwcmV2JywgJ2dvdG8nLCAncmVkaXJlY3QnLCAncmV0dXJuJywgJ2JhY2snLCAnZm9yd2FyZCcsCiAgICAgICAgICAgIAogICAgICAgICAgICAjIERpc3BsYXkgcGFyYW1ldGVycwogICAgICAgICAgICAnc2hvdycsICdkaXNwbGF5JywgJ2Zvcm1hdCcsICdsYXlvdXQnLCAndGhlbWUnLCAnc3R5bGUnLAogICAgICAgICAgICAKICAgICAgICAgICAgIyBGaWx0ZXIgcGFyYW1ldGVycwogICAgICAgICAgICAnZmlsdGVyJywgJ3NvcnQnLCAnb3JkZXInLCAnb3JkZXJieScsICdzb3J0YnknLCAnZGlyZWN0aW9uJywKICAgICAgICAgICAgCiAgICAgICAgICAgICMgUGFnaW5hdGlvbiBwYXJhbWV0ZXJzCiAgICAgICAgICAgICdsaW1pdCcsICdvZmZzZXQnLCAnc3RhcnQnLCAnY291bnQnLCAncGVyX3BhZ2UnLCAncGFnZV9zaXplJywKICAgICAgICAgICAgCiAgICAgICAgICAgICMgQVBJIHBhcmFtZXRlcnMKICAgICAgICAgICAgJ2NhbGxiYWNrJywgJ2pzb25wJywgJ2Zvcm1hdCcsICdvdXRwdXQnLCAncmVzcG9uc2VfdHlwZScsCiAgICAgICAgICAgIAogICAgICAgICAgICAjIERlYnVnIHBhcmFtZXRlcnMKICAgICAgICAgICAgJ2RlYnVnJywgJ3Rlc3QnLCAndHJhY2UnLCAndmVyYm9zZScsICdsb2cnLCAnZXJyb3InLAogICAgICAgICAgICAKICAgICAgICAgICAgIyBJbnB1dCBwYXJhbWV0ZXJzCiAgICAgICAgICAgICdpbnB1dCcsICd2YWx1ZScsICd2YWwnLCAncGFyYW0nLCAnYXJnJywgJ3ZhcmlhYmxlJwogICAgICAgIF0KICAgICAgICAKICAgICAgICBiYXNlX3VybCA9IHNlbGYudGFyZ2V0X3VybC5yc3RyaXAoJy8nKQogICAgICAgIAogICAgICAgIGZvciBwYXJhbSBpbiBjb21tb25fcGFyYW1zOgogICAgICAgICAgICB0ZXN0X3VybCA9IGYie2Jhc2VfdXJsfT97cGFyYW19PXRlc3QxMjMiCiAgICAgICAgICAgIAogICAgICAgICAgICB0cnk6CiAgICAgICAgICAgICAgICByZXNwb25zZSA9IHNlbGYuc2Vzc2lvbi5nZXQodGVzdF91cmwsIHRpbWVvdXQ9c2VsZi50aW1lb3V0KQogICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAjIENoZWNrIGlmIHBhcmFtZXRlciBpcyBwcm9jZXNzZWQKICAgICAgICAgICAgICAgIGlmIHNlbGYuaXNfcGFyYW1ldGVyX3Byb2Nlc3NlZChyZXNwb25zZSwgcGFyYW0sICJ0ZXN0MTIzIik6CiAgICAgICAgICAgICAgICAgICAgc2VsZi5kaXNjb3ZlcmVkX3BhcmFtcy5hZGQocGFyYW0pCiAgICAgICAgICAgICAgICAgICAgc2VsZi5sb2coZiJGb3VuZCBwYXJhbWV0ZXI6IHtwYXJhbX0iLCAiU1VDQ0VTUyIpCiAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgIGV4Y2VwdCBFeGNlcHRpb24gYXMgZToKICAgICAgICAgICAgICAgIHNlbGYubG9nKGYiRXJyb3IgdGVzdGluZyB7cGFyYW19OiB7c3RyKGUpfSIsICJFUlJPUiIpCiAgICAgICAgICAgICAgICBjb250aW51ZQogICAgICAgICAgICAgICAgCiAgICAgICAgICAgIHRpbWUuc2xlZXAoMC4xKSAgIyBTbWFsbCBkZWxheSB0byBhdm9pZCBvdmVyd2hlbG1pbmcgdGhlIHNlcnZlcgoKICAgIGRlZiBpc19wYXJhbWV0ZXJfcHJvY2Vzc2VkKHNlbGYsIHJlc3BvbnNlLCBwYXJhbV9uYW1lLCB0ZXN0X3ZhbHVlKToKICAgICAgICAiIiJDaGVjayBpZiBhIHBhcmFtZXRlciBhcHBlYXJzIHRvIGJlIHByb2Nlc3NlZCBieSB0aGUgYXBwbGljYXRpb24iIiIKICAgICAgICBjb250ZW50ID0gcmVzcG9uc2UudGV4dC5sb3dlcigpCiAgICAgICAgcGFyYW1fbmFtZV9sb3dlciA9IHBhcmFtX25hbWUubG93ZXIoKQogICAgICAgIHRlc3RfdmFsdWVfbG93ZXIgPSB0ZXN0X3ZhbHVlLmxvd2VyKCkKICAgICAgICAKICAgICAgICAjIENoZWNrIHZhcmlvdXMgaW5kaWNhdG9ycwogICAgICAgIGluZGljYXRvcnMgPSBbCiAgICAgICAgICAgIHRlc3RfdmFsdWVfbG93ZXIgaW4gY29udGVudCwKICAgICAgICAgICAgcGFyYW1fbmFtZV9sb3dlciBpbiBjb250ZW50LAogICAgICAgICAgICBmIm5hbWU9XCJ7cGFyYW1fbmFtZV9sb3dlcn1cIiIgaW4gY29udGVudCwKICAgICAgICAgICAgZiJpZD1cIntwYXJhbV9uYW1lX2xvd2VyfVwiIiBpbiBjb250ZW50LAogICAgICAgICAgICAiZXJyb3IiIGluIGNvbnRlbnQgYW5kIHBhcmFtX25hbWVfbG93ZXIgaW4gY29udGVudCwKICAgICAgICAgICAgImludmFsaWQiIGluIGNvbnRlbnQgYW5kIHBhcmFtX25hbWVfbG93ZXIgaW4gY29udGVudCwKICAgICAgICAgICAgIm1pc3NpbmciIGluIGNvbnRlbnQgYW5kIHBhcmFtX25hbWVfbG93ZXIgaW4gY29udGVudAogICAgICAgIF0KICAgICAgICAKICAgICAgICByZXR1cm4gYW55KGluZGljYXRvcnMpCgogICAgZGVmIGRpc2NvdmVyX2Zyb21fZm9ybXMoc2VsZik6CiAgICAgICAgIiIiRGlzY292ZXIgcGFyYW1ldGVycyBmcm9tIEhUTUwgZm9ybXMiIiIKICAgICAgICBzZWxmLmxvZygiQW5hbHl6aW5nIEhUTUwgZm9ybXMgZm9yIHBhcmFtZXRlcnMuLi4iLCAiSU5GTyIpCiAgICAgICAgCiAgICAgICAgdHJ5OgogICAgICAgICAgICByZXNwb25zZSA9IHNlbGYuc2Vzc2lvbi5nZXQoc2VsZi50YXJnZXRfdXJsLCB0aW1lb3V0PXNlbGYudGltZW91dCkKICAgICAgICAgICAgc291cCA9IEJlYXV0aWZ1bFNvdXAocmVzcG9uc2UuY29udGVudCwgJ2h0bWwucGFyc2VyJykKICAgICAgICAgICAgCiAgICAgICAgICAgIGZvcm1zID0gc291cC5maW5kX2FsbCgnZm9ybScpCiAgICAgICAgICAgIAogICAgICAgICAgICBmb3IgZm9ybSBpbiBmb3JtczoKICAgICAgICAgICAgICAgICMgR2V0IGZvcm0gaW5wdXRzCiAgICAgICAgICAgICAgICBpbnB1dHMgPSBmb3JtLmZpbmRfYWxsKFsnaW5wdXQnLCAndGV4dGFyZWEnLCAnc2VsZWN0J10pCiAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgIGZvciBpbnB1dF90YWcgaW4gaW5wdXRzOgogICAgICAgICAgICAgICAgICAgIG5hbWUgPSBpbnB1dF90YWcuZ2V0KCduYW1lJykKICAgICAgICAgICAgICAgICAgICBpZiBuYW1lOgogICAgICAgICAgICAgICAgICAgICAgICBzZWxmLmRpc2NvdmVyZWRfcGFyYW1zLmFkZChuYW1lKQogICAgICAgICAgICAgICAgICAgICAgICBzZWxmLmxvZyhmIkZvdW5kIGZvcm0gcGFyYW1ldGVyOiB7bmFtZX0iLCAiU1VDQ0VTUyIpCiAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgIGV4Y2VwdCBFeGNlcHRpb24gYXMgZToKICAgICAgICAgICAgc2VsZi5sb2coZiJFcnJvciBhbmFseXppbmcgZm9ybXM6IHtzdHIoZSl9IiwgIkVSUk9SIikKCiAgICBkZWYgZGlzY292ZXJfZnJvbV9qYXZhc2NyaXB0KHNlbGYpOgogICAgICAgICIiIkRpc2NvdmVyIHBhcmFtZXRlcnMgZnJvbSBKYXZhU2NyaXB0IGNvZGUiIiIKICAgICAgICBzZWxmLmxvZygiQW5hbHl6aW5nIEphdmFTY3JpcHQgZm9yIHBhcmFtZXRlcnMuLi4iLCAiSU5GTyIpCiAgICAgICAgCiAgICAgICAgdHJ5OgogICAgICAgICAgICByZXNwb25zZSA9IHNlbGYuc2Vzc2lvbi5nZXQoc2VsZi50YXJnZXRfdXJsLCB0aW1lb3V0PXNlbGYudGltZW91dCkKICAgICAgICAgICAgCiAgICAgICAgICAgICMgTG9vayBmb3IgY29tbW9uIEphdmFTY3JpcHQgcGFyYW1ldGVyIHBhdHRlcm5zCiAgICAgICAgICAgIGpzX3BhdHRlcm5zID0gWwogICAgICAgICAgICAgICAgcidnZXRQYXJhbWV0ZXJcKFsiXCddKFx3KylbIlwnXScsCiAgICAgICAgICAgICAgICByJ1VSTFNlYXJjaFBhcmFtcy4qZ2V0XChbIlwnXShcdyspWyJcJ10nLAogICAgICAgICAgICAgICAgcidsb2NhdGlvblwuc2VhcmNoLipbIlwnXShcdyspWyJcJ10nLAogICAgICAgICAgICAgICAgcid3aW5kb3dcLmxvY2F0aW9uLipbP1wmXShcdyspPScsCiAgICAgICAgICAgICAgICByJ2RvY3VtZW50XC5nZXRFbGVtZW50QnlJZFwoWyJcJ10oXHcrKVsiXCddJywKICAgICAgICAgICAgICAgIHInZG9jdW1lbnRcLmdldEVsZW1lbnRzQnlOYW1lXChbIlwnXShcdyspWyJcJ10nLAogICAgICAgICAgICAgICAgcid2YXJccysoXHcrKVxzKj0uKmdldFBhcmFtZXRlcicsCiAgICAgICAgICAgICAgICByJ1s/XCZdKFx3Kyk9LipcKycsCiAgICAgICAgICAgIF0KICAgICAgICAgICAgCiAgICAgICAgICAgIGZvciBwYXR0ZXJuIGluIGpzX3BhdHRlcm5zOgogICAgICAgICAgICAgICAgbWF0Y2hlcyA9IHJlLmZpbmRhbGwocGF0dGVybiwgcmVzcG9uc2UudGV4dCwgcmUuSUdOT1JFQ0FTRSkKICAgICAgICAgICAgICAgIGZvciBtYXRjaCBpbiBtYXRjaGVzOgogICAgICAgICAgICAgICAgICAgIGlmIGxlbihtYXRjaCkgPiAxIGFuZCBtYXRjaC5pc2FscGhhKCk6CiAgICAgICAgICAgICAgICAgICAgICAgIHNlbGYuZGlzY292ZXJlZF9wYXJhbXMuYWRkKG1hdGNoKQogICAgICAgICAgICAgICAgICAgICAgICBzZWxmLmxvZyhmIkZvdW5kIEpTIHBhcmFtZXRlcjoge21hdGNofSIsICJTVUNDRVNTIikKICAgICAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgZXhjZXB0IEV4Y2VwdGlvbiBhcyBlOgogICAgICAgICAgICBzZWxmLmxvZyhmIkVycm9yIGFuYWx5emluZyBKYXZhU2NyaXB0OiB7c3RyKGUpfSIsICJFUlJPUiIpCgogICAgZGVmIGRpc2NvdmVyX2Zyb21fbGlua3Moc2VsZik6CiAgICAgICAgIiIiRGlzY292ZXIgcGFyYW1ldGVycyBmcm9tIGxpbmtzIG9uIHRoZSBwYWdlIiIiCiAgICAgICAgc2VsZi5sb2coIkFuYWx5emluZyBsaW5rcyBmb3IgcGFyYW1ldGVycy4uLiIsICJJTkZPIikKICAgICAgICAKICAgICAgICB0cnk6CiAgICAgICAgICAgIHJlc3BvbnNlID0gc2VsZi5zZXNzaW9uLmdldChzZWxmLnRhcmdldF91cmwsIHRpbWVvdXQ9c2VsZi50aW1lb3V0KQogICAgICAgICAgICBzb3VwID0gQmVhdXRpZnVsU291cChyZXNwb25zZS5jb250ZW50LCAnaHRtbC5wYXJzZXInKQogICAgICAgICAgICAKICAgICAgICAgICAgbGlua3MgPSBzb3VwLmZpbmRfYWxsKCdhJywgaHJlZj1UcnVlKQogICAgICAgICAgICAKICAgICAgICAgICAgZm9yIGxpbmsgaW4gbGlua3M6CiAgICAgICAgICAgICAgICBocmVmID0gbGlua1snaHJlZiddCiAgICAgICAgICAgICAgICBpZiAnPycgaW4gaHJlZjoKICAgICAgICAgICAgICAgICAgICAjIEV4dHJhY3QgcGFyYW1ldGVycyBmcm9tIFVSTAogICAgICAgICAgICAgICAgICAgIHBhcmFtc19wYXJ0ID0gaHJlZi5zcGxpdCgnPycpWzFdCiAgICAgICAgICAgICAgICAgICAgaWYgJyYnIGluIHBhcmFtc19wYXJ0OgogICAgICAgICAgICAgICAgICAgICAgICBwYXJhbV9wYWlycyA9IHBhcmFtc19wYXJ0LnNwbGl0KCcmJykKICAgICAgICAgICAgICAgICAgICBlbHNlOgogICAgICAgICAgICAgICAgICAgICAgICBwYXJhbV9wYWlycyA9IFtwYXJhbXNfcGFydF0KICAgICAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgICAgICBmb3IgcGFpciBpbiBwYXJhbV9wYWlyczoKICAgICAgICAgICAgICAgICAgICAgICAgaWYgJz0nIGluIHBhaXI6CiAgICAgICAgICAgICAgICAgICAgICAgICAgICBwYXJhbV9uYW1lID0gcGFpci5zcGxpdCgnPScpWzBdCiAgICAgICAgICAgICAgICAgICAgICAgICAgICBpZiBwYXJhbV9uYW1lIGFuZCBwYXJhbV9uYW1lLmlzYWxwaGEoKToKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBzZWxmLmRpc2NvdmVyZWRfcGFyYW1zLmFkZChwYXJhbV9uYW1lKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHNlbGYubG9nKGYiRm91bmQgbGluayBwYXJhbWV0ZXI6IHtwYXJhbV9uYW1lfSIsICJTVUNDRVNTIikKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAKICAgICAgICBleGNlcHQgRXhjZXB0aW9uIGFzIGU6CiAgICAgICAgICAgIHNlbGYubG9nKGYiRXJyb3IgYW5hbHl6aW5nIGxpbmtzOiB7c3RyKGUpfSIsICJFUlJPUiIpCgogICAgZGVmIHRlc3RfYmxpbmRfcGFyYW1ldGVycyhzZWxmKToKICAgICAgICAiIiJUZXN0IGZvciBibGluZCBwYXJhbWV0ZXJzIHVzaW5nIGVycm9yLWJhc2VkIGRldGVjdGlvbiIiIgogICAgICAgIHNlbGYubG9nKCJUZXN0aW5nIGZvciBibGluZCBwYXJhbWV0ZXJzLi4uIiwgIklORk8iKQogICAgICAgIAogICAgICAgICMgUGFyYW1ldGVycyB0aGF0IG1pZ2h0IGNhdXNlIGVycm9ycyBvciBkaWZmZXJlbnQgcmVzcG9uc2VzCiAgICAgICAgZXJyb3JfaW5kdWNpbmdfdmFsdWVzID0gWwogICAgICAgICAgICAiJyBPUiAnMSc9JzEiLAogICAgICAgICAgICAiPHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0PiIsCiAgICAgICAgICAgICIuLi8uLi8uLi8uLi9ldGMvcGFzc3dkIiwKICAgICAgICAgICAgIiR7Nyo3fSIsCiAgICAgICAgICAgICJ7ezcqN319IiwKICAgICAgICAgICAgIjwlPTcqNyU+IiwKICAgICAgICAgICAgIi9ldGMvcGFzc3dkIiwKICAgICAgICAgICAgIi4uXFwuLlxcLi5cXHdpbmRvd3NcXHN5c3RlbTMyXFxkcml2ZXJzXFxldGNcXGhvc3RzIgogICAgICAgIF0KICAgICAgICAKICAgICAgICBiYXNlX3VybCA9IHNlbGYudGFyZ2V0X3VybC5yc3RyaXAoJy8nKQogICAgICAgIAogICAgICAgICMgR2V0IGJhc2VsaW5lIHJlc3BvbnNlCiAgICAgICAgdHJ5OgogICAgICAgICAgICBiYXNlbGluZV9yZXNwb25zZSA9IHNlbGYuc2Vzc2lvbi5nZXQoc2VsZi50YXJnZXRfdXJsLCB0aW1lb3V0PXNlbGYudGltZW91dCkKICAgICAgICAgICAgYmFzZWxpbmVfbGVuZ3RoID0gbGVuKGJhc2VsaW5lX3Jlc3BvbnNlLnRleHQpCiAgICAgICAgICAgIGJhc2VsaW5lX3N0YXR1cyA9IGJhc2VsaW5lX3Jlc3BvbnNlLnN0YXR1c19jb2RlCiAgICAgICAgZXhjZXB0OgogICAgICAgICAgICBzZWxmLmxvZygiQ291bGQgbm90IGdldCBiYXNlbGluZSByZXNwb25zZSIsICJFUlJPUiIpCiAgICAgICAgICAgIHJldHVybgogICAgICAgIAogICAgICAgICMgVGVzdCBrbm93biBwYXJhbWV0ZXJzIHdpdGggZXJyb3ItaW5kdWNpbmcgdmFsdWVzCiAgICAgICAgZm9yIHBhcmFtIGluIGxpc3Qoc2VsZi5kaXNjb3ZlcmVkX3BhcmFtcyk6CiAgICAgICAgICAgIGZvciB2YWx1ZSBpbiBlcnJvcl9pbmR1Y2luZ192YWx1ZXNbOjNdOiAgIyBUZXN0IGZpcnN0IDMgdmFsdWVzCiAgICAgICAgICAgICAgICB0ZXN0X3VybCA9IGYie2Jhc2VfdXJsfT97cGFyYW19PXt2YWx1ZX0iCiAgICAgICAgICAgICAgICAKICAgICAgICAgICAgICAgIHRyeToKICAgICAgICAgICAgICAgICAgICB0ZXN0X3Jlc3BvbnNlID0gc2VsZi5zZXNzaW9uLmdldCh0ZXN0X3VybCwgdGltZW91dD1zZWxmLnRpbWVvdXQpCiAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgIyBDaGVjayBmb3Igc2lnbmlmaWNhbnQgZGlmZmVyZW5jZXMKICAgICAgICAgICAgICAgICAgICBsZW5ndGhfZGlmZiA9IGFicyhsZW4odGVzdF9yZXNwb25zZS50ZXh0KSAtIGJhc2VsaW5lX2xlbmd0aCkKICAgICAgICAgICAgICAgICAgICBzdGF0dXNfZGlmZiA9IHRlc3RfcmVzcG9uc2Uuc3RhdHVzX2NvZGUgIT0gYmFzZWxpbmVfc3RhdHVzCiAgICAgICAgICAgICAgICAgICAgCiAgICAgICAgICAgICAgICAgICAgaWYgbGVuZ3RoX2RpZmYgPiAxMDAgb3Igc3RhdHVzX2RpZmY6CiAgICAgICAgICAgICAgICAgICAgICAgIHNlbGYubG9nKGYiUGFyYW1ldGVyIHtwYXJhbX0gc2hvd3MgcmVzcG9uc2UgZGlmZmVyZW5jZXMiLCAiV0FSTklORyIpCiAgICAgICAgICAgICAgICAgICAgICAgIGJyZWFrCiAgICAgICAgICAgICAgICAgICAgICAgIAogICAgICAgICAgICAgICAgZXhjZXB0OgogICAgICAgICAgICAgICAgICAgIGNvbnRpbnVlCgogICAgZGVmIHJ1bl9kaXNjb3Zlcnkoc2VsZik6CiAgICAgICAgIiIiUnVuIGFsbCBkaXNjb3ZlcnkgbWV0aG9kcyIiIgogICAgICAgIHNlbGYubG9nKGYiU3RhcnRpbmcgcGFyYW1ldGVyIGRpc2NvdmVyeSBmb3I6IHtzZWxmLnRhcmdldF91cmx9IiwgIklORk8iKQogICAgICAgIAogICAgICAgICMgUnVuIGRpc2NvdmVyeSBtZXRob2RzCiAgICAgICAgc2VsZi5kaXNjb3Zlcl9mcm9tX2Zvcm1zKCkKICAgICAgICBzZWxmLmRpc2NvdmVyX2Zyb21famF2YXNjcmlwdCgpCiAgICAgICAgc2VsZi5kaXNjb3Zlcl9mcm9tX2xpbmtzKCkKICAgICAgICBzZWxmLnRlc3RfY29tbW9uX3BhcmFtZXRlcnMoKQogICAgICAgIHNlbGYudGVzdF9ibGluZF9wYXJhbWV0ZXJzKCkKICAgICAgICAKICAgICAgICAjIEdlbmVyYXRlIHJlcG9ydAogICAgICAgIHNlbGYuZ2VuZXJhdGVfcmVwb3J0KCkKCiAgICBkZWYgZ2VuZXJhdGVfcmVwb3J0KHNlbGYpOgogICAgICAgICIiIkdlbmVyYXRlIGRpc2NvdmVyeSByZXBvcnQiIiIKICAgICAgICBwcmludChmIlxue0ZvcmUuQ1lBTn17Jz0nKjYwfSIpCiAgICAgICAgcHJpbnQoZiJ7Rm9yZS5DWUFOfVBBUkFNRVRFUiBESVNDT1ZFUlkgUkVQT1JUIikKICAgICAgICBwcmludChmIntGb3JlLkNZQU59eyc9Jyo2MH0iKQogICAgICAgIAogICAgICAgIGlmIG5vdCBzZWxmLmRpc2NvdmVyZWRfcGFyYW1zOgogICAgICAgICAgICBwcmludChmIntGb3JlLllFTExPV31ObyBwYXJhbWV0ZXJzIGRpc2NvdmVyZWQuIikKICAgICAgICBlbHNlOgogICAgICAgICAgICBwcmludChmIntGb3JlLkdSRUVOfURpc2NvdmVyZWQge2xlbihzZWxmLmRpc2NvdmVyZWRfcGFyYW1zKX0gcG90ZW50aWFsIHBhcmFtZXRlcnM6IikKICAgICAgICAgICAgcHJpbnQoKQogICAgICAgICAgICAKICAgICAgICAgICAgZm9yIGksIHBhcmFtIGluIGVudW1lcmF0ZShzb3J0ZWQoc2VsZi5kaXNjb3ZlcmVkX3BhcmFtcyksIDEpOgogICAgICAgICAgICAgICAgcHJpbnQoZiJ7Rm9yZS5XSElURX17aToyZH0uIHtwYXJhbX0iKQogICAgICAgICAgICAKICAgICAgICAgICAgIyBTYXZlIHRvIGZpbGUKICAgICAgICAgICAgd2l0aCBvcGVuKCdkaXNjb3ZlcmVkX3BhcmFtcy50eHQnLCAndycpIGFzIGY6CiAgICAgICAgICAgICAgICBmb3IgcGFyYW0gaW4gc29ydGVkKHNlbGYuZGlzY292ZXJlZF9wYXJhbXMpOgogICAgICAgICAgICAgICAgICAgIGYud3JpdGUoZiJ7cGFyYW19XG4iKQogICAgICAgICAgICAKICAgICAgICAgICAgcHJpbnQoZiJcbntGb3JlLkNZQU59UGFyYW1ldGVycyBzYXZlZCB0bzogZGlzY292ZXJlZF9wYXJhbXMudHh0IikKICAgICAgICAKICAgICAgICBwcmludChmIntGb3JlLkNZQU59eyc9Jyo2MH0iKQoKZGVmIG1haW4oKToKICAgIHBhcnNlciA9IGFyZ3BhcnNlLkFyZ3VtZW50UGFyc2VyKGRlc2NyaXB0aW9uPSdQYXJhbWV0ZXIgRGlzY292ZXJ5IFRvb2wnKQogICAgcGFyc2VyLmFkZF9hcmd1bWVudCgnLXUnLCAnLS11cmwnLCByZXF1aXJlZD1UcnVlLCBoZWxwPSdUYXJnZXQgVVJMJykKICAgIHBhcnNlci5hZGRfYXJndW1lbnQoJy0tdXNlci1hZ2VudCcsIGhlbHA9J0N1c3RvbSBVc2VyLUFnZW50IHN0cmluZycpCiAgICBwYXJzZXIuYWRkX2FyZ3VtZW50KCctLXRpbWVvdXQnLCB0eXBlPWludCwgZGVmYXVsdD0xMCwgaGVscD0nUmVxdWVzdCB0aW1lb3V0IChkZWZhdWx0OiAxMCknKQogICAgCiAgICBhcmdzID0gcGFyc2VyLnBhcnNlX2FyZ3MoKQogICAgCiAgICBkaXNjb3ZlcmVyID0gUGFyYW1EaXNjb3ZlcnkoYXJncy51cmwsIGFyZ3MudXNlcl9hZ2VudCwgYXJncy50aW1lb3V0KQogICAgZGlzY292ZXJlci5ydW5fZGlzY292ZXJ5KCkKCmlmIF9fbmFtZV9fID09ICJfX21haW5fXyI6CiAgICBtYWluKCkK').decode('utf-8'))
+import os
+import sys
+import platform
+import uuid
+import asyncio
+import aiohttp
+import json
+import re
+import argparse
+from urllib.parse import urlparse, urljoin, parse_qs, urlencode, quote
+from bs4 import BeautifulSoup
+from colorama import Fore, Style, init
+import warnings
+warnings.filterwarnings("ignore")
+
+# Initialize colorama
+init(autoreset=True)
+
+class LicenseManager:
+    """Advanced license verification system"""
+    
+    def __init__(self):
+        self.machine_id = self._get_machine_id()
+        self.verified = False
+        
+    def _get_machine_id(self):
+        """Generate unique machine identifier"""
+        try:
+            identifiers = [
+                platform.node(),
+                platform.machine(),
+                str(uuid.getnode()),
+                platform.platform()
+            ]
+            combined = ''.join(identifiers).encode()
+            return hashlib.sha256(combined).hexdigest()[:16]
+        except:
+            return "unknown_machine"
+    
+    def verify_license(self, license_key=None):
+        """Verify license key"""
+        if not license_key:
+            license_file = os.path.join(os.path.dirname(__file__), '.xss_license')
+            if os.path.exists(license_file):
+                try:
+                    with open(license_file, 'r') as f:
+                        license_key = f.read().strip()
+                except:
+                    pass
+        
+        if not license_key:
+            print(f"{Fore.RED}[!] License verification required")
+            return False
+        
+        try:
+            decoded = base64.b64decode(license_key).decode()
+            license_data = json.loads(decoded)
+            
+            if license_data.get('expires', 0) < time.time():
+                print(f"{Fore.RED}[!] License expired")
+                return False
+            
+            expected_hmac = license_data.pop('signature', '')
+            actual_hmac = hmac.new(
+                b'xss_sniper_2025_protect',
+                json.dumps(license_data, sort_keys=True).encode(),
+                hashlib.sha256
+            ).hexdigest()
+            
+            if not hmac.compare_digest(expected_hmac, actual_hmac):
+                return False
+            
+            self.verified = True
+            return True
+            
+        except:
+            return False
+    
+    def runtime_check(self):
+        """Runtime integrity check"""
+        if not self.verified:
+            sys.exit(1)
+
+class AdvancedParamDiscovery:
+    """Advanced parameter discovery with modern techniques"""
+    
+    def __init__(self, target_url, **kwargs):
+        # License verification
+        self.license_mgr = LicenseManager()
+        if not self.license_mgr.verify_license():
+            sys.exit(1)
+        
+        self.target_url = target_url
+        self.timeout = kwargs.get('timeout', 15)
+        self.max_concurrent = kwargs.get('threads', 20)
+        self.delay = kwargs.get('delay', 0)
+        self.verbose = kwargs.get('verbose', False)
+        self.session = None
+        self.discovered_params = set()
+        
+        # Headers
+        self.headers = {
+            'User-Agent': kwargs.get('user_agent') or 
+                         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'Connection': 'keep-alive'
+        }
+        
+        # Modern parameter wordlists
+        self.parameter_wordlists = self._load_parameter_wordlists()
+
+    def _load_parameter_wordlists(self):
+        """Load comprehensive parameter wordlists"""
+        return {
+            # Common web parameters
+            'common': [
+                'id', 'page', 'search', 'q', 'query', 'name', 'user', 'email',
+                'password', 'pass', 'pwd', 'username', 'login', 'auth', 'token',
+                'key', 'api_key', 'access_token', 'session', 'sessid', 'sid',
+                'cat', 'category', 'type', 'action', 'method', 'function', 'cmd',
+                'view', 'show', 'display', 'render', 'output', 'format', 'mode',
+                'file', 'filename', 'path', 'dir', 'folder', 'location', 'url',
+                'link', 'href', 'src', 'img', 'image', 'pic', 'photo', 'avatar'
+            ],
+            
+            # API parameters
+            'api': [
+                'callback', 'jsonp', 'format', 'output', 'response_type',
+                'api_key', 'access_token', 'oauth_token', 'client_id', 'client_secret',
+                'grant_type', 'scope', 'state', 'code', 'redirect_uri',
+                'version', 'v', 'api_version', 'endpoint', 'method', 'action'
+            ],
+            
+            # Navigation & filtering
+            'navigation': [
+                'next', 'prev', 'previous', 'page', 'offset', 'limit', 'per_page',
+                'size', 'count', 'start', 'end', 'from', 'to', 'begin', 'finish',
+                'filter', 'sort', 'order', 'orderby', 'sortby', 'direction',
+                'asc', 'desc', 'ascending', 'descending', 'reverse'
+            ],
+            
+            # Modern framework parameters
+            'framework': [
+                # React/Next.js
+                'props', 'state', 'ref', 'key', 'children', 'component',
+                # Vue.js
+                'data', 'methods', 'computed', 'watch', 'model',
+                # Angular
+                'input', 'output', 'model', 'binding', 'directive',
+                # Express.js
+                'req', 'res', 'body', 'params', 'query', 'headers'
+            ],
+            
+            # Security-related parameters
+            'security': [
+                'csrf_token', 'xsrf_token', 'authenticity_token', 'nonce',
+                'hash', 'signature', 'hmac', 'checksum', 'verify', 'validate',
+                'captcha', 'recaptcha', 'challenge', 'response', 'solution'
+            ],
+            
+            # Database & content parameters
+            'database': [
+                'table', 'column', 'field', 'record', 'row', 'data', 'value',
+                'content', 'text', 'description', 'title', 'subject', 'message',
+                'comment', 'note', 'memo', 'tag', 'label', 'meta'
+            ],
+            
+            # File & upload parameters
+            'file_upload': [
+                'upload', 'file_upload', 'attachment', 'document', 'media',
+                'binary', 'data', 'content', 'payload', 'blob', 'stream'
+            ],
+            
+            # Time & date parameters
+            'temporal': [
+                'date', 'time', 'datetime', 'timestamp', 'created', 'updated',
+                'modified', 'year', 'month', 'day', 'hour', 'minute', 'second',
+                'timezone', 'tz', 'locale', 'lang', 'language'
+            ]
+        }
+
+    async def init_session(self):
+        """Initialize async HTTP session"""
+        timeout = aiohttp.ClientTimeout(total=self.timeout)
+        self.session = aiohttp.ClientSession(
+            headers=self.headers,
+            timeout=timeout,
+            connector=aiohttp.TCPConnector(limit=100, limit_per_host=30)
+        )
+
+    async def close_session(self):
+        """Close HTTP session"""
+        if self.session:
+            await self.session.close()
+
+    def log(self, message, level="INFO"):
+        """Enhanced logging with protection"""
+        self.license_mgr.runtime_check()
+        
+        timestamp = time.strftime("%H:%M:%S")
+        colors = {
+            "INFO": Fore.CYAN,
+            "SUCCESS": Fore.GREEN,
+            "WARNING": Fore.YELLOW,
+            "ERROR": Fore.RED,
+            "FOUND": Fore.GREEN
+        }
+        
+        color = colors.get(level, Fore.WHITE)
+        if self.verbose or level in ["SUCCESS", "FOUND", "ERROR"]:
+            print(f"{color}[{timestamp}] [{level}] {message}")
+
+    async def test_parameter_reflection(self, url, param_name, test_value="test123"):
+        """Test if parameter value is reflected in response"""
+        try:
+            test_url = f"{url}{'&' if '?' in url else '?'}{param_name}={test_value}"
+            
+            async with self.session.get(test_url) as response:
+                if response.status == 200:
+                    content = await response.text()
+                    
+                    # Check for various reflection indicators
+                    reflection_indicators = [
+                        test_value in content,
+                        param_name in content,
+                        f'name="{param_name}"' in content,
+                        f'id="{param_name}"' in content,
+                        f'class="{param_name}"' in content,
+                        f'data-{param_name}' in content
+                    ]
+                    
+                    if any(reflection_indicators):
+                        return True, content, response.status
+                    
+                    # Check for error messages that might reveal parameter processing
+                    error_patterns = [
+                        f"invalid {param_name}",
+                        f"missing {param_name}",
+                        f"required {param_name}",
+                        f"{param_name} not found",
+                        f"undefined {param_name}",
+                        f"unknown {param_name}"
+                    ]
+                    
+                    content_lower = content.lower()
+                    for pattern in error_patterns:
+                        if pattern.lower() in content_lower:
+                            return True, content, response.status
+            
+            return False, "", 0
+            
+        except Exception as e:
+            self.log(f"Error testing parameter {param_name}: {str(e)}", "ERROR")
+            return False, "", 0
+
+    async def discover_from_wordlist(self, url, wordlist_name):
+        """Discover parameters using wordlist"""
+        self.log(f"Testing {wordlist_name} parameters...", "INFO")
+        
+        if wordlist_name not in self.parameter_wordlists:
+            return
+        
+        wordlist = self.parameter_wordlists[wordlist_name]
+        semaphore = asyncio.Semaphore(self.max_concurrent)
+        
+        async def test_param(param):
+            async with semaphore:
+                is_valid, content, status = await self.test_parameter_reflection(url, param)
+                
+                if is_valid:
+                    self.discovered_params.add(param)
+                    self.log(f"Found parameter: {param} (wordlist: {wordlist_name})", "FOUND")
+                
+                if self.delay:
+                    await asyncio.sleep(self.delay)
+        
+        # Test all parameters concurrently
+        tasks = [test_param(param) for param in wordlist]
+        await asyncio.gather(*tasks, return_exceptions=True)
+
+    async def discover_from_html_analysis(self, url):
+        """Discover parameters from HTML form analysis"""
+        self.log("Analyzing HTML forms and JavaScript...", "INFO")
+        
+        try:
+            async with self.session.get(url) as response:
+                if response.status != 200:
+                    return
+                
+                content = await response.text()
+                soup = BeautifulSoup(content, 'html.parser')
+                
+                # Extract form parameters
+                forms = soup.find_all('form')
+                for form in forms:
+                    inputs = form.find_all(['input', 'textarea', 'select'])
+                    for input_tag in inputs:
+                        name = input_tag.get('name')
+                        if name and name not in self.discovered_params:
+                            self.discovered_params.add(name)
+                            self.log(f"Found form parameter: {name}", "FOUND")
+                
+                # Extract from JavaScript
+                js_patterns = [
+                    r'\.get\(["\'](\w+)["\']',
+                    r'\.post\(["\'](\w+)["\']',
+                    r'getParameter\(["\'](\w+)["\']',
+                    r'URLSearchParams.*get\(["\'](\w+)["\']',
+                    r'location\.search.*[?&](\w+)=',
+                    r'window\.location.*[?&](\w+)=',
+                    r'fetch\([^)]*[?&](\w+)=',
+                    r'ajax\([^)]*[?&](\w+)=',
+                    r'var\s+(\w+)\s*=.*getParameter',
+                    r'let\s+(\w+)\s*=.*getParameter',
+                    r'const\s+(\w+)\s*=.*getParameter'
+                ]
+                
+                for pattern in js_patterns:
+                    matches = re.finditer(pattern, content, re.IGNORECASE)
+                    for match in matches:
+                        param = match.group(1)
+                        if param and len(param) > 1 and param not in self.discovered_params:
+                            self.discovered_params.add(param)
+                            self.log(f"Found JS parameter: {param}", "FOUND")
+                
+                # Extract from data attributes
+                data_attrs = soup.find_all(attrs={"data-param": True})
+                for element in data_attrs:
+                    param = element.get('data-param')
+                    if param and param not in self.discovered_params:
+                        self.discovered_params.add(param)
+                        self.log(f"Found data attribute parameter: {param}", "FOUND")
+                
+        except Exception as e:
+            self.log(f"Error analyzing HTML: {str(e)}", "ERROR")
+
+    async def discover_from_api_endpoints(self, url):
+        """Discover parameters from common API endpoints"""
+        self.log("Checking common API endpoints...", "INFO")
+        
+        api_endpoints = [
+            '/api', '/api/v1', '/api/v2', '/rest', '/graphql',
+            '/swagger.json', '/openapi.json', '/api-docs',
+            '/docs', '/documentation'
+        ]
+        
+        base_url = f"{urlparse(url).scheme}://{urlparse(url).netloc}"
+        
+        for endpoint in api_endpoints:
+            try:
+                api_url = urljoin(base_url, endpoint)
+                async with self.session.get(api_url) as response:
+                    if response.status == 200:
+                        content = await response.text()
+                        
+                        # Look for parameter definitions in API docs
+                        param_patterns = [
+                            r'"(\w+)"\s*:\s*{\s*"type"',
+                            r'"parameters".*?"(\w+)"',
+                            r'"query".*?"(\w+)"',
+                            r'"path".*?"(\w+)"',
+                            r'@RequestParam.*?"(\w+)"',
+                            r'@PathVariable.*?"(\w+)"'
+                        ]
+                        
+                        for pattern in param_patterns:
+                            matches = re.finditer(pattern, content, re.IGNORECASE)
+                            for match in matches:
+                                param = match.group(1)
+                                if param and len(param) > 1 and param not in self.discovered_params:
+                                    self.discovered_params.add(param)
+                                    self.log(f"Found API parameter: {param} (from {endpoint})", "FOUND")
+                
+                if self.delay:
+                    await asyncio.sleep(self.delay * 0.5)
+                    
+            except:
+                continue
+
+    async def discover_from_error_analysis(self, url):
+        """Discover parameters by analyzing error responses"""
+        self.log("Analyzing error responses for parameter hints...", "INFO")
+        
+        # Common parameter values that might trigger informative errors
+        error_probes = [
+            'invalid_value_12345',
+            '../../../etc/passwd',
+            '<script>alert(1)</script>',
+            '${7*7}',
+            'null',
+            'undefined',
+            ''
+        ]
+        
+        for probe in error_probes:
+            try:
+                # Test with a likely parameter name
+                test_url = f"{url}{'&' if '?' in url else '?'}test={quote(probe)}"
+                
+                async with self.session.get(test_url) as response:
+                    content = await response.text()
+                    
+                    # Look for parameter names in error messages
+                    error_patterns = [
+                        r'parameter ["\'](\w+)["\'] is required',
+                        r'missing required parameter ["\'](\w+)["\']',
+                        r'invalid parameter ["\'](\w+)["\']',
+                        r'unknown parameter ["\'](\w+)["\']',
+                        r'parameter ["\'](\w+)["\'] not found',
+                        r'(\w+) parameter is missing',
+                        r'(\w+) is required',
+                        r'expected parameter (\w+)',
+                        r'(\w+) must be provided'
+                    ]
+                    
+                    for pattern in error_patterns:
+                        matches = re.finditer(pattern, content, re.IGNORECASE)
+                        for match in matches:
+                            param = match.group(1)
+                            if param and len(param) > 1 and param not in self.discovered_params:
+                                self.discovered_params.add(param)
+                                self.log(f"Found parameter from error: {param}", "FOUND")
+                
+                if self.delay:
+                    await asyncio.sleep(self.delay * 0.2)
+                    
+            except:
+                continue
+
+    async def discover_from_headers_analysis(self, url):
+        """Discover parameters from HTTP headers"""
+        self.log("Analyzing HTTP headers for parameter hints...", "INFO")
+        
+        try:
+            async with self.session.get(url) as response:
+                headers = response.headers
+                
+                # Look for parameter hints in various headers
+                header_patterns = [
+                    ('Link', r'[?&](\w+)='),
+                    ('Location', r'[?&](\w+)='),
+                    ('Refresh', r'[?&](\w+)='),
+                    ('X-*', r'(\w+)'),
+                    ('Access-Control-Allow-Headers', r'(\w+)'),
+                    ('Content-Security-Policy', r'(\w+)'),
+                ]
+                
+                for header_name, pattern in header_patterns:
+                    for header, value in headers.items():
+                        if header_name == 'X-*' and header.lower().startswith('x-'):
+                            # Extract custom header names as potential parameters
+                            param = header[2:].replace('-', '_').lower()
+                            if param and param not in self.discovered_params:
+                                self.discovered_params.add(param)
+                                self.log(f"Found header-based parameter: {param}", "FOUND")
+                        else:
+                            matches = re.finditer(pattern, value, re.IGNORECASE)
+                            for match in matches:
+                                param = match.group(1)
+                                if param and len(param) > 1 and param not in self.discovered_params:
+                                    self.discovered_params.add(param)
+                                    self.log(f"Found header parameter: {param} (from {header})", "FOUND")
+                
+        except Exception as e:
+            self.log(f"Error analyzing headers: {str(e)}", "ERROR")
+
+    async def run_discovery(self):
+        """Run comprehensive parameter discovery"""
+        self.log(f"Starting parameter discovery for: {self.target_url}", "INFO")
+        
+        await self.init_session()
+        
+        try:
+            # Run all discovery methods
+            await asyncio.gather(
+                self.discover_from_html_analysis(self.target_url),
+                self.discover_from_api_endpoints(self.target_url),
+                self.discover_from_headers_analysis(self.target_url),
+                self.discover_from_error_analysis(self.target_url),
+                return_exceptions=True
+            )
+            
+            # Run wordlist-based discovery
+            for wordlist_name in self.parameter_wordlists.keys():
+                await self.discover_from_wordlist(self.target_url, wordlist_name)
+            
+            self.generate_report()
+            
+        finally:
+            await self.close_session()
+
+    def generate_report(self):
+        """Generate discovery report"""
+        self.license_mgr.runtime_check()
+        
+        print(f"\n{Fore.CYAN}{'='*70}")
+        print(f"{Fore.CYAN}PARAMETER DISCOVERY REPORT")
+        print(f"{Fore.CYAN}{'='*70}")
+        
+        if not self.discovered_params:
+            print(f"{Fore.YELLOW}No parameters discovered.")
+        else:
+            print(f"{Fore.GREEN}Discovered {len(self.discovered_params)} potential parameters:")
+            print()
+            
+            # Sort parameters for better readability
+            sorted_params = sorted(self.discovered_params)
+            
+            for i, param in enumerate(sorted_params, 1):
+                print(f"{Fore.WHITE}{i:2d}. {param}")
+            
+            # Save to file
+            output_file = f'discovered_params_{int(time.time())}.txt'
+            with open(output_file, 'w') as f:
+                for param in sorted_params:
+                    f.write(f"{param}\n")
+            
+            print(f"\n{Fore.CYAN}Parameters saved to: {output_file}")
+        
+        print(f"{Fore.CYAN}{'='*70}")
+
+def show_banner():
+    """Display banner"""
+    banner = f"""
+{Fore.CYAN}    ╔══════════════════════════════════════════════════════╗
+{Fore.CYAN}    ║      🔍 Advanced Parameter Discovery Tool            ║
+{Fore.CYAN}    ║              XSSniper Security Module                ║
+{Fore.CYAN}    ║                Enhanced for 2025                     ║
+{Fore.CYAN}    ╚══════════════════════════════════════════════════════╝
+{Fore.MAGENTA}                     Developed by H4mzaX
+{Style.RESET_ALL}
+"""
+    print(banner)
+
+async def main():
+    show_banner()
+    
+    parser = argparse.ArgumentParser(description='Advanced Parameter Discovery Tool')
+    parser.add_argument('-u', '--url', required=True, help='Target URL')
+    parser.add_argument('--user-agent', help='Custom User-Agent string')
+    parser.add_argument('--timeout', type=int, default=15, help='Request timeout (default: 15)')
+    parser.add_argument('-t', '--threads', type=int, default=20, help='Number of concurrent threads (default: 20)')
+    parser.add_argument('-d', '--delay', type=float, default=0, help='Delay between requests (default: 0)')
+    parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output')
+    parser.add_argument('--license', help='License key for operation')
+    
+    args = parser.parse_args()
+    
+    try:
+        discoverer = AdvancedParamDiscovery(
+            target_url=args.url,
+            user_agent=args.user_agent,
+            timeout=args.timeout,
+            threads=args.threads,
+            delay=args.delay,
+            verbose=args.verbose
+        )
+        
+        await discoverer.run_discovery()
+        
+    except KeyboardInterrupt:
+        print(f"\n{Fore.YELLOW}Discovery interrupted by user.")
+    except Exception as e:
+        print(f"{Fore.RED}Error: {str(e)}")
+
+if __name__ == "__main__":
+    if len(sys.argv) == 1:
+        show_banner()
+        print(f"{Fore.YELLOW}Use --help for usage information")
+        sys.exit(0)
+    
+    asyncio.run(main())

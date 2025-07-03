@@ -1,6 +1,52 @@
-requests>=2.28.0
-beautifulsoup4>=4.11.0
+# XSSniper - Advanced XSS Scanner Dependencies
+# Enhanced for 2025 with modern security testing capabilities
+
+# Core HTTP and async libraries
+aiohttp>=3.9.0
+asyncio-throttle>=1.0.2
+
+# HTML parsing and web scraping
+beautifulsoup4>=4.12.2
+lxml>=4.9.3
+
+# URL parsing and encoding
+urllib3>=2.0.0
+
+# Terminal output and colors
 colorama>=0.4.6
-selenium>=4.15.0
-lxml>=4.9.0
-urllib3>=1.26.0
+
+# JSON handling (built-in but specified for compatibility)
+# json (built-in)
+
+# Regular expressions (built-in)
+# re (built-in)
+
+# Command line argument parsing (built-in)
+# argparse (built-in)
+
+# System information and platform detection (built-in)
+# platform (built-in)
+# uuid (built-in)
+# os (built-in)
+# sys (built-in)
+
+# Cryptographic functions (built-in)
+# hashlib (built-in)
+# hmac (built-in)
+# base64 (built-in)
+
+# Time handling (built-in)
+# time (built-in)
+
+# Threading and concurrency (built-in)
+# concurrent.futures (built-in)
+
+# Random number generation (built-in)
+# random (built-in)
+
+# File operations (built-in)
+# warnings (built-in)
+
+# Optional dependencies for enhanced features
+requests>=2.31.0  # Fallback HTTP library
+selenium>=4.15.0  # Browser automation (optional)

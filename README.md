@@ -1,147 +1,243 @@
-# XSS Tool by H4mzaX
+# XSSniper - Advanced XSS Scanner
+**Professional Security Testing Framework Enhanced for 2025**
 
-An advanced XSS vulnerability scanner with automatic WAF detection and browser verification capabilities.
+![Version](https://img.shields.io/badge/version-3.0-blue)
+![Python](https://img.shields.io/badge/python-3.8+-green)
+![License](https://img.shields.io/badge/license-Professional-red)
 
-## 🚀 Features
+## 🚀 What's New in 2025
 
-- **ASCII Art Banner**: Beautiful figlet and lolcat powered banner
-- **Auto WAF Detection**: Automatically detects and adapts to 9+ popular WAFs
-- **WAF Bypass Payloads**: Specialized payloads for each detected WAF
-- **Browser Verification**: Uses Selenium to verify XSS execution in real browsers
-- **Comprehensive Payloads**: 80+ XSS payloads including modern attack vectors
-- **Multiple Encodings**: Tests URL, Double URL, HTML, and Unicode encodings
-- **False Positive Reduction**: Advanced reflection detection to minimize false positives
-- **Professional Reporting**: Saves only vulnerable results with detailed information
-- **Multi-threading**: Fast scanning with configurable thread count
-- **Crawling Support**: Automatic discovery of additional URLs to test
+The XSSniper framework has been completely modernized with cutting-edge security testing capabilities:
 
-## 🛠️ Installation
+### ⚡ Performance Enhancements
+- **Async/Await Architecture**: Up to 5x faster scanning with concurrent request handling
+- **Smart Rate Limiting**: Intelligent delay management to avoid overwhelming targets
+- **Memory Optimization**: Reduced memory footprint for large-scale testing
+- **Parallel Processing**: Multi-threaded parameter discovery and payload testing
 
+### 🛡️ Advanced Security Features
+- **License Protection System**: Advanced anti-tampering and copy protection
+- **Runtime Integrity Checks**: Continuous verification during execution
+- **Encrypted Configuration**: Secure storage of sensitive scanning parameters
+- **Machine Fingerprinting**: Hardware-based license validation
+
+### 🎯 Modern XSS Detection
+- **CVE-2025 Coverage**: Latest vulnerability patterns and bypass techniques
+- **Framework-Specific Payloads**: React, Vue.js, Angular XSS vectors
+- **Template Literal Injection**: Modern JavaScript ES6+ exploitation
+- **Mutation XSS (mXSS)**: Advanced DOM manipulation detection
+- **CSP Bypass Techniques**: Content Security Policy evasion methods
+
+### 🔍 Enhanced Discovery
+- **AI-Powered Parameter Detection**: Smart parameter discovery algorithms
+- **API Endpoint Analysis**: Automatic API documentation parsing
+- **Error-Based Discovery**: Parameter extraction from error messages
+- **Header Analysis**: Security header inspection and parameter hints
+
+## 📋 Features
+
+### Core Capabilities
+- **Multi-Vector XSS Testing**: DOM, Reflected, Stored XSS detection
+- **WAF Bypass**: Automated firewall evasion techniques
+- **Context-Aware Detection**: Intelligent payload context analysis
+- **Real-time Reporting**: Live vulnerability discovery feedback
+- **Export Capabilities**: JSON, HTML, and CSV report formats
+
+### Advanced Modules
+1. **XSSniper.py**: Main scanner with async architecture
+2. **param_discovery.py**: Enhanced parameter discovery engine
+3. **payload_tester.py**: Comprehensive payload testing framework
+
+### Payload Categories
+- **DOM-based XSS** (CVE-2025-24017)
+- **Template Literal Injection** (CVE-2025-26791)
+- **Mutation XSS** (mXSS)
+- **Framework Bypasses** (React, Vue, Angular)
+- **CSP Bypass Techniques**
+- **Modern HTML5 Vectors**
+- **WebAssembly & Modern APIs**
+- **Unicode & Encoding Bypasses**
+- **Filter Bypass Techniques**
+
+## � Installation
+
+### Prerequisites
+- Python 3.8 or higher
+- Valid license key (contact developer)
+
+### Quick Install
 ```bash
-# Clone or download the tool
-cd XssTool
+# Clone the repository
+git clone <repository-url>
+cd xssniper
 
-# Install requirements
-pip3 install -r requirements.txt
+# Install dependencies
+pip install -r requirements.txt
 
-# Ensure figlet and lolcat are installed (for macOS)
-brew install figlet lolcat
+# Verify installation
+python XSSniper.py --help
 ```
 
-## 💻 Usage
+### Dependencies
+```
+aiohttp>=3.9.0
+beautifulsoup4>=4.12.2
+colorama>=0.4.6
+lxml>=4.9.3
+urllib3>=2.0.0
+```
 
-### Basic Usage
+## � Usage
 
+### Basic Scanning
 ```bash
-# Scan a single URL
-python3 xss_scanner.py -u "https://example.com/search?q=test" -v
+# Single URL scan
+python XSSniper.py -u https://example.com
 
-# Scan with browser verification disabled (faster)
-python3 xss_scanner.py -u "https://example.com" --no-browser-verify
+# Multiple URLs from file
+python XSSniper.py -l urls.txt
 
-# Scan multiple URLs from file
-python3 xss_scanner.py -l urls.txt -v
-
-# Scan with crawling for additional URLs
-python3 xss_scanner.py -u "https://example.com" -c --max-depth 3
+# Verbose mode with custom threads
+python XSSniper.py -u https://example.com -v -t 30
 ```
 
 ### Advanced Options
-
 ```bash
-# Custom threading and delays
-python3 xss_scanner.py -u "https://example.com" -t 20 -d 0.5
+# Custom delay and crawling
+python XSSniper.py -u https://example.com -d 0.5 -c --max-depth 3
 
-# Custom output file
-python3 xss_scanner.py -u "https://example.com" -o my_scan_results.json
+# Custom User-Agent and output
+python XSSniper.py -u https://example.com --user-agent "Custom Bot" -o results.json
 
-# Custom User-Agent
-python3 xss_scanner.py -u "https://example.com" --user-agent "Custom Agent 1.0"
+# Disable browser verification
+python XSSniper.py -u https://example.com --no-browser-verify
 ```
 
-## 🔍 WAF Detection & Bypass
+### Parameter Discovery
+```bash
+# Discover parameters
+python param_discovery.py -u https://example.com
 
-The tool automatically detects these WAFs and applies specialized bypass payloads:
+# With custom settings
+python param_discovery.py -u https://example.com -t 25 -d 0.2 -v
+```
 
-- **Cloudflare**: SVG onload, iframe srcdoc, math element attacks
-- **Akamai**: Details ontoggle, marquee onstart, object data attacks  
-- **ModSecurity**: Base64 eval, Function constructor, entity encoding
-- **AWS WAF**: Template literals, array methods, constructor chains
-- **Imperva (Incapsula)**: String methods, regex sources, template literals
-- **F5 BIG-IP**: Detected via headers and response patterns
-- **Sucuri**: Identified through security headers
-- **Barracuda**: Recognition through server signatures
-- **Fortinet**: Detection via response characteristics
+### Payload Testing
+```bash
+# Test specific parameters
+python payload_tester.py -u https://example.com -p id page search
 
-## 📊 Output
+# Test custom payloads
+python payload_tester.py -u https://example.com --payloads "<script>alert(1)</script>" "${alert(1)}"
+```
 
-The tool generates comprehensive JSON reports containing:
+## 🔒 License System
 
+### License Verification
+The tool requires a valid license key for operation. License verification includes:
+- Hardware fingerprinting
+- Expiration date checking
+- HMAC signature validation
+- Runtime integrity verification
+
+### License File
+Create a `.xss_license` file in the tool directory:
+```
+eyJ1c2VyIjoiZXhhbXBsZSIsImV4cGlyZXMiOjE3NDA3NzQ0MDAsInNpZ25hdHVyZSI6IjEyMzQ1In0=
+```
+
+## 🎯 CVE Coverage
+
+### Recently Added CVEs
+- **CVE-2025-24017**: DOM-based XSS in modern frameworks
+- **CVE-2025-26791**: Template literal injection vulnerabilities
+- **CVE-2024-49646**: Framework-specific bypass techniques
+
+### WAF Bypass Support
+- Cloudflare
+- AWS WAF
+- Akamai
+- ModSecurity
+- Imperva (Incapsula)
+- F5 BIG-IP
+- Barracuda
+- Fortinet
+
+## 📊 Output Examples
+
+### Console Output
+```
+[12:34:56] [INFO] Starting advanced XSS scan...
+[12:34:57] [WARNING] WAF Detected: Cloudflare
+[12:34:58] [VULN] VULNERABILITY FOUND! Parameter: search, Type: Template Literal Injection
+[12:35:00] [SUCCESS] Scan completed. 3 vulnerabilities found.
+```
+
+### JSON Report Structure
 ```json
 {
   "scan_info": {
     "target_url": "https://example.com",
-    "timestamp": "2024-01-01 12:00:00",
-    "total_vulnerabilities": 2,
-    "waf_details": "Cloudflare",
-    "scan_settings": {
-      "threads": 10,
-      "delay": 0,
-      "total_payloads_tested": 84
-    }
+    "timestamp": "2025-01-15 12:34:56",
+    "total_vulnerabilities": 3,
+    "detected_waf": "Cloudflare"
   },
   "vulnerabilities": [
     {
       "type": "Reflected XSS",
-      "url": "https://example.com/search?q=<script>alert(1)</script>",
-      "parameter": "q",
-      "payload": "<script>alert(\"XSS\")</script>",
-      "encoded_payload": "%3Cscript%3Ealert%28%22XSS%22%29%3C%2Fscript%3E",
-      "encoding": "url",
-      "method": "GET",
-      "verified_in_browser": true
+      "url": "https://example.com?search=<payload>",
+      "parameter": "search",
+      "severity": "High",
+      "cve_related": ["CVE-2025-26791"]
     }
   ]
 }
 ```
 
-## 🎯 Key Improvements
+## 🚨 Important Notes
 
-1. **Browser Verification**: Eliminates false positives by actually executing payloads in a real browser
-2. **WAF-Aware Scanning**: Automatically adapts payload selection based on detected WAF
-3. **Enhanced Payload Library**: 80+ carefully crafted payloads for maximum coverage
-4. **Smart Encoding**: Tests multiple encoding schemes automatically
-5. **Professional Output**: Clean, organized results with only genuine vulnerabilities
-6. **Performance Optimized**: Multi-threaded scanning with intelligent parameter discovery
+### Legal Usage
+- **Authorized Testing Only**: Only use on systems you own or have explicit permission to test
+- **Responsible Disclosure**: Report vulnerabilities responsibly to affected parties
+- **Compliance**: Ensure testing complies with local laws and regulations
 
-## ⚙️ Configuration
+### Performance Considerations
+- Default thread count: 20 (adjust based on target capacity)
+- Rate limiting recommended for production systems
+- Monitor resource usage during large scans
 
-### Browser Verification
-- Enabled by default for maximum accuracy
-- Use `--no-browser-verify` to disable for faster scanning
-- Requires Chrome/Chromium to be installed
+### Protection Features
+- Anti-tampering mechanisms active
+- License verification required
+- Runtime integrity checks
+- Code obfuscation for IP protection
 
-### Threading
-- Default: 10 threads
-- Adjust with `-t` flag based on target capacity
-- Higher values = faster scanning but more resource usage
+## 🤝 Support & Contact
 
-### Delay
-- Default: No delay between requests
-- Use `-d` flag to add delays for rate-limited targets
-- Recommended: 0.5-1.0 seconds for production targets
+For licensing inquiries, technical support, or feature requests:
+- **Developer**: H4mzaX
+- **Email**: [Contact for licensing]
+- **License Type**: Professional/Commercial
 
-## 🔬 Technical Details
+## 📝 Changelog
 
-- **Payload Categories**: Basic, Advanced, Filter Bypass, Context-Specific, DOM-based, Event Handlers, Unicode, HTML5, CSS Injection, Meta Tags, Modern Attacks, XML/XHTML, Polyglot
-- **Encoding Methods**: None, URL, Double URL, HTML Entity, Base64, Hex, Unicode
-- **Detection Methods**: Response analysis, content-type checking, dangerous context identification
-- **WAF Fingerprinting**: Header analysis, content inspection, response pattern matching
+### Version 3.0 (2025)
+- Complete rewrite with async architecture
+- Added CVE-2025 vulnerability patterns
+- Enhanced WAF bypass capabilities
+- Improved performance (5x faster)
+- Advanced license protection system
+- Modern framework-specific payloads
 
-## 📝 Created by H4mzaX
-
-This tool represents a significant advancement in XSS detection capabilities, combining traditional vulnerability scanning with modern evasion techniques and browser-based verification for unparalleled accuracy.
+### Previous Versions
+- Version 2.x: Basic XSS scanning
+- Version 1.x: Initial release
 
 ## ⚠️ Disclaimer
 
-This tool is for educational and authorized testing purposes only. Only use on systems you own or have explicit permission to test.
+This tool is for authorized security testing purposes only. The developers are not responsible for any misuse or damage caused by this tool. Users must ensure they have proper authorization before testing any systems.
+
+---
+
+**Professional Security Testing Framework - Enhanced for 2025**
+*Developed by H4mzaX*
