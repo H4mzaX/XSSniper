@@ -4,8 +4,7 @@ XSSniper - Advanced XSS Vulnerability Scanner
 Professional Security Testing Framework
 Developed by H4mzaX
 
-Protected Software - Unauthorized copying or redistribution is prohibited
-License verification required for operation
+Open Source Tool - Free for everyone to use
 """
 
 import hashlib
