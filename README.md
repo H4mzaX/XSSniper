@@ -3,7 +3,27 @@
 
 ![Version](https://img.shields.io/badge/version-3.0-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-green)
-![License](https://img.shields.io/badge/license-Professional-red)
+![License](https://img.shields.io/badge/license-Open_Source-green)
+
+## 🚀 Quick Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/H4mzaX/XSSniper.git
+cd XSSniper
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Add to PATH (optional for global access)
+echo 'export PATH="$PATH:/path/to/XSSniper"' >> ~/.bashrc
+source ~/.bashrc
+
+# Run XSSniper
+python3 XSSniper.py -u "https://example.com" -v
+```
+
+**Repository URL**: `https://github.com/H4mzaX/XSSniper`
 
 ## 🚀 What's New in 2025
 
