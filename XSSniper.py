@@ -616,8 +616,6 @@ class AdvancedXSSScanner:
 
     def generate_report(self):
         """Generate comprehensive scan report"""
-        self.license_mgr.runtime_check()
-        
         print("\n" + "="*80)
         print(f"{Fore.MAGENTA}XSS SCAN REPORT - Advanced Security Testing Framework")
         print("="*80)
@@ -691,7 +689,6 @@ async def main():
     parser.add_argument('--user-agent', help='Custom User-Agent string')
     parser.add_argument('-o', '--output', help='Output file for results (default: auto-generated)')
     parser.add_argument('--no-browser-verify', action='store_false', dest='browser_verify', help='Disable browser-based verification')
-    parser.add_argument('--license', help='License key for operation')
     
     args = parser.parse_args()
     

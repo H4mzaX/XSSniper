@@ -485,7 +485,6 @@ async def main():
     parser.add_argument('-t', '--threads', type=int, default=20, help='Number of concurrent threads (default: 20)')
     parser.add_argument('-d', '--delay', type=float, default=0, help='Delay between requests (default: 0)')
     parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output')
-    parser.add_argument('--license', help='License key for operation')
     
     args = parser.parse_args()
     
