@@ -43,6 +43,7 @@ class AdvancedPayloadTester:
         self.verbose = kwargs.get('verbose', False)
         self.custom_payloads = kwargs.get('payloads', [])
         self.parameters = kwargs.get('parameters', [])
+        self.output_file = kwargs.get('output_file')  # Only save if user specifies -o
         self.session = None
         self.successful_payloads = []
         self.tested_payloads = 0
@@ -499,6 +500,8 @@ class AdvancedPayloadTester:
         
         async def test_single_payload(payload):
             async with semaphore:
+                self.log(f"Testing payload [{self.tested_payloads + 1}]: {payload[:60]}{'...' if len(payload) > 60 else ''}", "INFO")
+                
                 # Test payload without encoding
                 result = await self.test_payload(url, payload, parameter, 'GET')
                 if result['vulnerable']:
@@ -630,23 +633,9 @@ class AdvancedPayloadTester:
                 print(f"    Context: {detection['context_analysis']['context_type']}")
                 print(f"    Reflections: {detection['context_analysis']['total_reflections']}")
         
-        # Save detailed report
-        report_data = {
-            'scan_info': {
-                'target_url': self.target_url,
-                'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
-                'total_payloads_tested': self.tested_payloads,
-                'total_vulnerabilities': len(self.successful_payloads),
-                'parameters_tested': self.parameters
-            },
-            'vulnerabilities': self.successful_payloads
-        }
-        
-        output_file = f'payload_test_results_{int(time.time())}.json'
-        with open(output_file, 'w') as f:
-            json.dump(report_data, f, indent=2)
-        
-        print(f"\n{Fore.CYAN}Detailed report saved to: {output_file}")
+        # Save detailed report only if user wants it (-o flag will be added)
+        # For now, just show the tip to use -o flag
+        print(f"\n{Fore.YELLOW}💡 Tip: Use -o filename.json to save detailed report{Style.RESET_ALL}")
         print(f"{Fore.CYAN}{'='*80}")
 
 def show_banner():
@@ -674,6 +663,7 @@ async def main():
     parser.add_argument('-t', '--threads', type=int, default=20, help='Number of concurrent threads (default: 20)')
     parser.add_argument('-d', '--delay', type=float, default=0, help='Delay between requests (default: 0)')
     parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output')
+    parser.add_argument('-o', '--output', help='Output file for results (JSON format)')
     
     args = parser.parse_args()
     
@@ -686,7 +676,8 @@ async def main():
             timeout=args.timeout,
             threads=args.threads,
             delay=args.delay,
-            verbose=args.verbose
+            verbose=args.verbose,
+            output_file=args.output
         )
         
         await tester.run_comprehensive_test()

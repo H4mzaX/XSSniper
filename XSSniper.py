@@ -41,10 +41,16 @@ class AdvancedXSSScanner:
         self.threads = kwargs.get('threads', 20)
         self.delay = kwargs.get('delay', 0)
         self.verbose = kwargs.get('verbose', False)
-        self.output_file = kwargs.get('output_file') or f"xss_scan_results_{int(time.time())}.json"
+        self.output_file = kwargs.get('output_file')  # Only save if user specifies -o
         self.browser_verify = kwargs.get('browser_verify', True)
+        self.verify_ssl = kwargs.get('verify_ssl', False)  # Default to False for testing flexibility
+        self.waf_bypass = kwargs.get('waf_bypass', False)
+        self.forced_waf = kwargs.get('forced_waf', None)
+        self.encoding_methods = kwargs.get('encoding_methods', [])
+        self.discover_params = kwargs.get('discover_params', False)
+        self.all_payloads = kwargs.get('all_payloads', False)
         self.max_retries = 3
-        self.timeout = 15
+        self.timeout = kwargs.get('timeout', 15)
         
         # Session management
         self.session = None
@@ -63,9 +69,12 @@ class AdvancedXSSScanner:
             'Upgrade-Insecure-Requests': '1'
         }
         
-        # Load modern payloads
+        # Load modern payloads (combining built-in and external)
         self.payloads = self._load_advanced_payloads()
         self.waf_bypass_payloads = self._load_waf_bypass_payloads()
+        
+        # Load external payloads if available
+        self._load_external_payloads()
         
     def _load_advanced_payloads(self):
         """Load modern XSS payloads based on recent CVEs"""
@@ -168,6 +177,32 @@ class AdvancedXSSScanner:
             ]
         }
     
+    def _load_external_payloads(self):
+        """Load external payloads from JSON file and merge with built-in payloads"""
+        try:
+            with open('xss_payloads.json', 'r') as f:
+                external_payloads = json.load(f)
+            
+            # Merge external payloads with built-in payloads
+            for category, payloads in external_payloads.items():
+                if category in self.payloads:
+                    # Add external payloads to existing category (avoid duplicates)
+                    existing_payloads = set(self.payloads[category])
+                    new_payloads = [p for p in payloads if p not in existing_payloads]
+                    self.payloads[category].extend(new_payloads)
+                else:
+                    # Create new category
+                    self.payloads[category] = payloads
+            
+            self.log(f"Loaded external payloads from xss_payloads.json", "SUCCESS")
+            
+        except FileNotFoundError:
+            self.log("xss_payloads.json not found, using built-in payloads only", "WARNING")
+        except json.JSONDecodeError:
+            self.log("Error parsing xss_payloads.json, using built-in payloads only", "ERROR")
+        except Exception as e:
+            self.log(f"Error loading external payloads: {str(e)}", "ERROR")
+    
     def _load_waf_bypass_payloads(self):
         """Load WAF-specific bypass payloads"""
         return {
@@ -198,12 +233,27 @@ class AdvancedXSSScanner:
         }
 
     async def init_session(self):
-        """Initialize async HTTP session"""
+        """Initialize async HTTP session with proper SSL handling"""
+        import ssl
+        
+        # Create SSL context that handles certificate verification issues
+        ssl_context = ssl.create_default_context()
+        if self.verify_ssl is False:
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
+        
         timeout = aiohttp.ClientTimeout(total=self.timeout)
+        connector = aiohttp.TCPConnector(
+            limit=100,
+            limit_per_host=30,
+            ssl=ssl_context,
+            enable_cleanup_closed=True
+        )
+        
         self.session = aiohttp.ClientSession(
             headers=self.headers,
             timeout=timeout,
-            connector=aiohttp.TCPConnector(limit=100, limit_per_host=30)
+            connector=connector
         )
 
     async def close_session(self):
@@ -211,20 +261,85 @@ class AdvancedXSSScanner:
         if self.session:
             await self.session.close()
 
-    def log(self, message, level="INFO"):
-        """Enhanced logging function"""
+    def log(self, message, level="INFO", payload=None):
+        """Enhanced logging function with beautiful colored output"""
         timestamp = time.strftime("%H:%M:%S")
         colors = {
-            "INFO": Fore.CYAN,
-            "SUCCESS": Fore.GREEN,
-            "WARNING": Fore.YELLOW,
-            "ERROR": Fore.RED,
-            "VULN": Fore.RED + Back.YELLOW
+            "INFO": Fore.CYAN + Style.BRIGHT,
+            "SUCCESS": Fore.GREEN + Style.BRIGHT,
+            "WARNING": Fore.YELLOW + Style.BRIGHT,
+            "ERROR": Fore.RED + Style.BRIGHT,
+            "VULN": Fore.RED + Back.YELLOW + Style.BRIGHT,
+            "PAYLOAD": Fore.MAGENTA + Style.BRIGHT,
+            "WAF": Fore.BLUE + Style.BRIGHT,
+            "PARAM": Fore.CYAN,
+            "TEST": Fore.WHITE
         }
         
         color = colors.get(level, Fore.WHITE)
-        if self.verbose or level in ["SUCCESS", "VULN", "ERROR"]:
-            print(f"{color}[{timestamp}] [{level}] {message}")
+        
+        # Enhanced output formatting
+        if level == "VULN":
+            print(f"\n{color}🎯 [VULNERABILITY FOUND] {Style.RESET_ALL}")
+            print(f"{color}{'='*60}{Style.RESET_ALL}")
+            print(f"{Fore.WHITE}⏰ Time: {timestamp}{Style.RESET_ALL}")
+            print(f"{Fore.WHITE}📍 {message}{Style.RESET_ALL}")
+            if payload:
+                print(f"{Fore.MAGENTA + Style.BRIGHT}🚀 Payload: {payload}{Style.RESET_ALL}")
+            print(f"{color}{'='*60}{Style.RESET_ALL}\n")
+        elif level == "SUCCESS":
+            print(f"{color}✅ [{timestamp}] {message}{Style.RESET_ALL}")
+        elif level == "ERROR":
+            print(f"{color}❌ [{timestamp}] {message}{Style.RESET_ALL}")
+        elif level == "WARNING":
+            print(f"{color}⚠️  [{timestamp}] {message}{Style.RESET_ALL}")
+        elif level == "PAYLOAD":
+            print(f"{color}🧪 [{timestamp}] Testing payload: {message}{Style.RESET_ALL}")
+        elif level == "TEST":
+            if self.verbose:
+                print(f"{color}🔍 [{timestamp}] {message}{Style.RESET_ALL}")
+        else:
+            if self.verbose or level in ["SUCCESS", "VULN", "ERROR", "WARNING"]:
+                print(f"{color}ℹ️  [{timestamp}] {message}{Style.RESET_ALL}")
+    
+    def show_progress(self, current, total, param_name, task_type="Testing"):
+        """Show animated progress bar with single line update"""
+        import sys
+        
+        # Calculate progress percentage
+        progress = (current / total) * 100
+        
+        # Create progress bar animation
+        bar_length = 25
+        filled_length = int(bar_length * current // total)
+        
+        # Animation characters
+        animations = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+        spinner = animations[current % len(animations)]
+        
+        # Progress bar
+        bar = '█' * filled_length + '░' * (bar_length - filled_length)
+        
+        # Color based on progress
+        if progress < 25:
+            color = Fore.RED
+        elif progress < 50:
+            color = Fore.YELLOW
+        elif progress < 75:
+            color = Fore.BLUE
+        else:
+            color = Fore.GREEN
+        
+        # Create the progress line
+        progress_line = f"\r{color}{spinner} {task_type} '{param_name}' [{bar}] {current}/{total} ({progress:.1f}%){Style.RESET_ALL}"
+        
+        # Print with carriage return to overwrite previous line
+        sys.stdout.write(progress_line)
+        sys.stdout.flush()
+        
+        # Add newline when complete
+        if current == total:
+            print()  # Move to next line when done
 
     async def detect_waf(self, url):
         """Enhanced WAF detection"""
@@ -266,10 +381,11 @@ class AdvancedXSSScanner:
         return None
 
     async def test_single_payload(self, url, payload, param_name=None, method='GET', form_data=None):
-        """Test individual payload with advanced detection"""
+        """Test individual payload with enhanced detection and confidence scoring"""
         try:
             unique_id = f"XSS{random.randint(1000, 9999)}"
             test_payload = payload.replace('document.domain', f'"{unique_id}"')
+            test_url = url
             
             if method.upper() == 'GET' and param_name:
                 parsed_url = urlparse(url)
@@ -290,76 +406,136 @@ class AdvancedXSSScanner:
                     response_text = await response.text()
                     status_code = response.status
                     content_type = response.headers.get('content-type', '')
-                    test_url = url
             else:
-                async with self.session.get(f"{url}{test_payload}") as response:
+                test_url = f"{url}{test_payload}"
+                async with self.session.get(test_url) as response:
                     response_text = await response.text()
                     status_code = response.status
                     content_type = response.headers.get('content-type', '')
-                    test_url = f"{url}{test_payload}"
             
-            # Enhanced XSS detection
-            if status_code == 200 and self.is_xss_reflected(response_text, unique_id, content_type, test_payload):
-                return {
-                    'vulnerable': True,
-                    'url': test_url,
-                    'payload': payload,
-                    'test_payload': test_payload,
-                    'parameter': param_name,
-                    'method': method,
-                    'unique_id': unique_id,
-                    'content_type': content_type,
-                    'reflection_type': self.get_reflection_type(response_text, test_payload)
-                }
+            # Enhanced XSS detection with confidence scoring
+            if status_code == 200:
+                is_vulnerable = self.is_xss_reflected(response_text, unique_id, content_type, test_payload)
+                
+                if is_vulnerable:
+                    # Calculate confidence based on detection method
+                    confidence = self.calculate_detection_confidence(response_text, unique_id, test_payload, content_type)
+                    
+                    return {
+                        'vulnerable': True,
+                        'url': url,
+                        'test_url': test_url,
+                        'payload': payload,
+                        'test_payload': test_payload,
+                        'parameter': param_name,
+                        'method': method,
+                        'unique_id': unique_id,
+                        'content_type': content_type,
+                        'confidence': confidence,
+                        'reflection_type': self.get_reflection_type(response_text, test_payload)
+                    }
             
             return {'vulnerable': False}
             
         except Exception as e:
-            self.log(f"Error testing payload: {str(e)}", "ERROR")
+            if self.verbose:
+                self.log(f"Error testing payload: {str(e)}", "ERROR")
             return {'vulnerable': False}
 
     def is_xss_reflected(self, response_text, unique_id, content_type, payload):
-        """Enhanced XSS reflection detection with context analysis - Fixed for accuracy"""
+        """Enhanced XSS reflection detection with strict context analysis to avoid false positives"""
         if unique_id not in response_text:
             return False
         
-        # Don't flag JSON responses as XSS (like httpbin.org)
-        if 'application/json' in content_type.lower():
-            return False
+        # Don't flag JSON responses, API endpoints, or other non-HTML content
+        safe_content_types = ['application/json', 'application/xml', 'text/plain', 'application/javascript']
+        for safe_type in safe_content_types:
+            if safe_type in content_type.lower():
+                return False
         
-        # Check for actual XSS execution contexts, not just reflection
-        dangerous_contexts = [
-            f'<script[^>]*>{unique_id}',
-            f'<script[^>]*>.*{unique_id}.*</script>',
-            f'onerror\\s*=\\s*["\']?[^"\']*{unique_id}',
-            f'onload\\s*=\\s*["\']?[^"\']*{unique_id}',
-            f'<svg[^>]*onload\\s*=\\s*["\']?[^"\']*{unique_id}',
-            f'<img[^>]*onerror\\s*=\\s*["\']?[^"\']*{unique_id}',
-            f'javascript:\\s*[^"\']*{unique_id}',
-            f'<iframe[^>]*srcdoc\\s*=\\s*["\'][^"\']*<script[^>]*>{unique_id}'
+        # Get the actual payload that was sent (decode unique_id back)
+        original_payload = payload.replace('document.domain', f'"{unique_id}"')
+        
+        # Check for STRICT XSS execution contexts - must be unescaped and executable
+        strict_patterns = [
+            # Script tag with unescaped content
+            f'<script[^>]*>[^<]*{re.escape(unique_id)}[^<]*</script>',
+            
+            # Event handlers with unescaped content (not in quoted attributes)
+            rf'<[^>]+\s(?:onload|onerror|onclick|onmouseover)\s*=\s*[^"\'][^>]*{re.escape(unique_id)}[^>]*>',
+            
+            # JavaScript URLs in href/src (unescaped)
+            rf'<[^>]+\s(?:href|src)\s*=\s*["\']?javascript:[^"\'>]*{re.escape(unique_id)}[^"\'>]*["\']?[^>]*>',
+            
+            # SVG onload with unescaped content
+            rf'<svg[^>]*\sonload\s*=\s*[^"\'][^>]*{re.escape(unique_id)}[^>]*>',
+            
+            # Iframe srcdoc with script execution
+            rf'<iframe[^>]*\ssrcdoc\s*=\s*["\'][^"\'>]*<script[^>]*>{re.escape(unique_id)}[^<]*</script>[^"\'>]*["\'][^>]*>'
         ]
         
-        # Only flag if payload is actually in executable context
-        for pattern in dangerous_contexts:
-            if re.search(pattern, response_text, re.IGNORECASE | re.DOTALL):
-                return True
+        # Only flag if payload is in UNESCAPED executable context
+        for pattern in strict_patterns:
+            matches = re.finditer(pattern, response_text, re.IGNORECASE | re.DOTALL)
+            for match in matches:
+                context = match.group(0)
+                # Additional check: ensure the payload isn't HTML-escaped
+                if ('&lt;' not in context and '&gt;' not in context and 
+                    '&quot;' not in context and '&#' not in context):
+                    return True
         
-        # Check if the payload itself (not just unique_id) is reflected in dangerous context
-        if payload in response_text:
-            # Look for actual script execution patterns with the payload
-            payload_patterns = [
-                f'<script[^>]*>.*{re.escape(payload)}.*</script>',
-                f'<[^>]+on\\w+\\s*=\\s*["\']?[^"\']*{re.escape(payload)}',
-                f'javascript:\\s*[^"\']*{re.escape(payload)}',
-                f'<svg[^>]*onload\\s*=\\s*["\']?[^"\']*{re.escape(payload)}'
+        # Check if full original payload is reflected unescaped in dangerous contexts
+        if original_payload in response_text:
+            # Verify it's in executable context and not escaped
+            dangerous_full_payload_patterns = [
+                f'<script[^>]*>[^<]*{re.escape(original_payload)}[^<]*</script>',
+                rf'<[^>]+\s(?:onload|onerror)\s*=\s*[^"\'][^>]*{re.escape(original_payload)}[^>]*>',
+                rf'<svg[^>]*\sonload\s*=\s*[^"\'][^>]*{re.escape(original_payload)}[^>]*>'
             ]
             
-            for pattern in payload_patterns:
-                if re.search(pattern, response_text, re.IGNORECASE | re.DOTALL):
-                    return True
+            for pattern in dangerous_full_payload_patterns:
+                matches = re.finditer(pattern, response_text, re.IGNORECASE | re.DOTALL)
+                for match in matches:
+                    context = match.group(0)
+                    # Ensure not escaped
+                    if ('&lt;' not in context and '&gt;' not in context and 
+                        '&quot;' not in context and '&#' not in context):
+                        return True
         
         return False
 
+    def calculate_detection_confidence(self, response_text, unique_id, test_payload, content_type):
+        """Calculate confidence score for XSS detection"""
+        confidence_score = 0
+        
+        # High confidence indicators
+        if f'<script>{unique_id}' in response_text or f'<script>alert("{unique_id}")' in response_text:
+            confidence_score += 90
+        elif f'onload=alert("{unique_id}")' in response_text or f'onerror=alert("{unique_id}")' in response_text:
+            confidence_score += 85
+        elif f'javascript:alert("{unique_id}")' in response_text:
+            confidence_score += 80
+        elif unique_id in response_text and 'text/html' in content_type:
+            confidence_score += 60
+        
+        # Penalty for potentially safe contexts
+        if '&lt;' in response_text or '&gt;' in response_text:
+            confidence_score -= 30
+        if 'application/json' in content_type:
+            confidence_score -= 50
+        
+        # Ensure confidence is between 0-100
+        confidence_score = max(0, min(100, confidence_score))
+        
+        if confidence_score >= 80:
+            return 'Very High'
+        elif confidence_score >= 60:
+            return 'High'
+        elif confidence_score >= 40:
+            return 'Medium'
+        else:
+            return 'Low'
+    
     def get_reflection_type(self, response_text, payload):
         """Determine the type of XSS reflection"""
         if '<script>' in payload and '<script>' in response_text:
@@ -395,15 +571,23 @@ class AdvancedXSSScanner:
             
             # Get appropriate payloads based on detected WAF
             if self.detected_waf and self.detected_waf in self.waf_bypass_payloads:
+                self.log(f"Using WAF bypass payloads for {self.detected_waf}", "WAF")
                 test_payloads = self.waf_bypass_payloads[self.detected_waf] + self.payloads['dom_based']
             else:
                 # Use all payload categories
                 test_payloads = []
-                for category in self.payloads.values():
-                    test_payloads.extend(category)
+                for category_name, category_payloads in self.payloads.items():
+                    self.log(f"Loading {len(category_payloads)} payloads from {category_name} category", "INFO")
+                    test_payloads.extend(category_payloads)
             
-            # Test payloads with rate limiting
-            for payload in test_payloads:
+            # Start testing message
+            print(f"{Fore.CYAN}🧪 Starting payload tests on parameter '{param_name}' ({len(test_payloads)} payloads){Style.RESET_ALL}")
+            
+            # Test payloads with animated progress
+            for i, payload in enumerate(test_payloads, 1):
+                # Show animated progress
+                self.show_progress(i, len(test_payloads), param_name, "Testing parameter")
+                
                 result = await self.test_single_payload(url, payload, param_name, 'GET')
                 
                 if result['vulnerable']:
@@ -415,10 +599,26 @@ class AdvancedXSSScanner:
                         'method': 'GET',
                         'reflection_type': result['reflection_type'],
                         'severity': self.calculate_severity(result),
-                        'cve_related': self.map_to_cve(result['payload'])
+                        'cve_related': self.map_to_cve(result['payload']),
+                        'test_url': result.get('test_url', result['url']),
+                        'confidence': result.get('confidence', 'High')
                     }
                     self.vulnerabilities.append(vuln)
-                    self.log(f"VULNERABILITY FOUND! Parameter: {param_name}, Type: {result['reflection_type']}", "VULN")
+                    
+                    # Show detailed vulnerability information
+                    print(f"\n{Fore.RED + Back.YELLOW + Style.BRIGHT}🎯 VULNERABILITY DETECTED! 🎯{Style.RESET_ALL}")
+                    print(f"{Fore.RED}{'='*70}{Style.RESET_ALL}")
+                    print(f"{Fore.WHITE}📍 Parameter: {Fore.YELLOW + Style.BRIGHT}{param_name}{Style.RESET_ALL}")
+                    print(f"{Fore.WHITE}🎯 Type: {Fore.GREEN + Style.BRIGHT}{result['reflection_type']}{Style.RESET_ALL}")
+                    print(f"{Fore.WHITE}🚀 Successful Payload: {Fore.MAGENTA + Style.BRIGHT}{result['payload']}{Style.RESET_ALL}")
+                    print(f"{Fore.WHITE}🌐 Test URL: {Fore.CYAN}{result.get('test_url', result['url'])[:100]}{'...' if len(result.get('test_url', result['url'])) > 100 else ''}{Style.RESET_ALL}")
+                    print(f"{Fore.WHITE}📊 Confidence: {Fore.GREEN + Style.BRIGHT}{result.get('confidence', 'High')}{Style.RESET_ALL}")
+                    print(f"{Fore.RED}{'='*70}{Style.RESET_ALL}\n")
+                    
+                    # Stop testing this parameter if vulnerability found (unless --all-payloads is used)
+                    if not self.all_payloads:
+                        self.log(f"Vulnerability found, skipping remaining payloads for {param_name} (use --all-payloads to test all)", "INFO")
+                        break
                 
                 if self.delay:
                     await asyncio.sleep(self.delay)
@@ -526,13 +726,21 @@ class AdvancedXSSScanner:
                         
                         # Select appropriate payloads
                         if self.detected_waf and self.detected_waf in self.waf_bypass_payloads:
+                            self.log(f"Using WAF bypass payloads for {self.detected_waf}", "WAF")
                             test_payloads = self.waf_bypass_payloads[self.detected_waf] + self.payloads['dom_based']
                         else:
                             test_payloads = []
                             for category in self.payloads.values():
                                 test_payloads.extend(category[:5])  # Limit for performance
                         
-                        for payload in test_payloads:
+                        # Start testing message for forms
+                        print(f"{Fore.CYAN}🧪 Starting payload tests on form input '{input_name}' ({len(test_payloads)} payloads){Style.RESET_ALL}")
+                        
+                        # Test form inputs with animated progress
+                        for i, payload in enumerate(test_payloads, 1):
+                            # Show animated progress
+                            self.show_progress(i, len(test_payloads), input_name, "Testing form input")
+                            
                             result = await self.test_single_payload(action_url, payload, input_name, method, form_data.copy())
                             
                             if result['vulnerable']:
@@ -544,10 +752,24 @@ class AdvancedXSSScanner:
                                     'method': method.upper(),
                                     'reflection_type': result['reflection_type'],
                                     'severity': self.calculate_severity(result),
-                                    'cve_related': self.map_to_cve(result['payload'])
+                                    'cve_related': self.map_to_cve(result['payload']),
+                                    'test_url': result.get('test_url', result['url']),
+                                    'confidence': result.get('confidence', 'High')
                                 }
                                 self.vulnerabilities.append(vuln)
-                                self.log(f"VULNERABILITY FOUND! Form input: {input_name}, Type: {result['reflection_type']}", "VULN")
+                                
+                                # Show detailed vulnerability information
+                                print(f"\n{Fore.RED + Back.YELLOW + Style.BRIGHT}🎯 VULNERABILITY DETECTED! 🎯{Style.RESET_ALL}")
+                                print(f"{Fore.RED}{'='*70}{Style.RESET_ALL}")
+                                print(f"{Fore.WHITE}📍 Form Input: {Fore.YELLOW + Style.BRIGHT}{input_name}{Style.RESET_ALL}")
+                                print(f"{Fore.WHITE}🎯 Type: {Fore.GREEN + Style.BRIGHT}{result['reflection_type']}{Style.RESET_ALL}")
+                                print(f"{Fore.WHITE}🚀 Successful Payload: {Fore.MAGENTA + Style.BRIGHT}{result['payload']}{Style.RESET_ALL}")
+                                print(f"{Fore.WHITE}🌐 Test URL: {Fore.CYAN}{result.get('test_url', result['url'])[:100]}{'...' if len(result.get('test_url', result['url'])) > 100 else ''}{Style.RESET_ALL}")
+                                print(f"{Fore.WHITE}📊 Confidence: {Fore.GREEN + Style.BRIGHT}{result.get('confidence', 'High')}{Style.RESET_ALL}")
+                                print(f"{Fore.RED}{'='*70}{Style.RESET_ALL}\n")
+                                
+                                if not self.all_payloads:
+                                    break
                             
                             if self.delay:
                                 await asyncio.sleep(self.delay)
@@ -602,65 +824,109 @@ class AdvancedXSSScanner:
             await self.close_session()
 
     def generate_report(self):
-        """Generate comprehensive scan report"""
-        print("\n" + "="*80)
-        print(f"{Fore.MAGENTA}XSS SCAN REPORT - Advanced Security Testing Framework")
-        print("="*80)
+        """Generate comprehensive scan report with beautiful formatting"""
+        print("\n" + f"{Fore.CYAN + Style.BRIGHT}{'═'*80}{Style.RESET_ALL}")
+        print(f"{Fore.MAGENTA + Style.BRIGHT}    🎯 XSS SCAN REPORT - Advanced Security Testing Framework 🎯{Style.RESET_ALL}")
+        print(f"{Fore.CYAN + Style.BRIGHT}{'═'*80}{Style.RESET_ALL}")
+        
+        # Scan Summary
+        print(f"\n{Fore.WHITE + Style.BRIGHT}📊 SCAN SUMMARY{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}{'─'*50}{Style.RESET_ALL}")
+        print(f"{Fore.WHITE}🌐 Target URL: {Fore.YELLOW}{self.target_url}{Style.RESET_ALL}")
+        print(f"{Fore.WHITE}⏰ Scan Time: {Fore.YELLOW}{time.strftime('%Y-%m-%d %H:%M:%S')}{Style.RESET_ALL}")
+        print(f"{Fore.WHITE}🧵 Threads: {Fore.YELLOW}{self.threads}{Style.RESET_ALL}")
+        print(f"{Fore.WHITE}⏱️  Delay: {Fore.YELLOW}{self.delay}s{Style.RESET_ALL}")
         
         if self.detected_waf:
-            print(f"{Fore.YELLOW}WAF Detected: {self.detected_waf}{Style.RESET_ALL}")
+            print(f"{Fore.WHITE}🛡️  WAF Detected: {Fore.RED + Style.BRIGHT}{self.detected_waf}{Style.RESET_ALL}")
+        else:
+            print(f"{Fore.WHITE}🛡️  WAF Status: {Fore.GREEN}Not detected{Style.RESET_ALL}")
+        
+        # Vulnerability Results
+        print(f"\n{Fore.WHITE + Style.BRIGHT}🔍 VULNERABILITY RESULTS{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}{'─'*50}{Style.RESET_ALL}")
         
         if not self.vulnerabilities:
-            print(f"{Fore.GREEN}No XSS vulnerabilities found.")
+            print(f"{Fore.GREEN + Style.BRIGHT}✅ No XSS vulnerabilities found - Target appears secure!{Style.RESET_ALL}")
         else:
-            print(f"{Fore.RED}Found {len(self.vulnerabilities)} XSS vulnerabilities:")
+            print(f"{Fore.RED + Style.BRIGHT}⚠️  Found {len(self.vulnerabilities)} XSS vulnerabilit{'ies' if len(self.vulnerabilities) > 1 else 'y'}:{Style.RESET_ALL}")
             print()
             
             for i, vuln in enumerate(self.vulnerabilities, 1):
-                print(f"{Fore.RED}[{i}] {vuln['type']} - {vuln['severity']} Severity")
-                print(f"    URL: {vuln['url']}")
-                print(f"    Parameter: {vuln['parameter']}")
-                print(f"    Method: {vuln['method']}")
-                print(f"    Reflection Type: {vuln['reflection_type']}")
-                print(f"    Payload: {vuln['payload']}")
+                severity_color = {
+                    'High': Fore.RED + Style.BRIGHT,
+                    'Medium': Fore.YELLOW + Style.BRIGHT,
+                    'Low': Fore.BLUE + Style.BRIGHT
+                }.get(vuln['severity'], Fore.WHITE)
+                
+                print(f"{Fore.RED + Style.BRIGHT}┌─ [{i}] {vuln['type']} ─ {severity_color}{vuln['severity']} SEVERITY{Style.RESET_ALL}")
+                print(f"{Fore.WHITE}│ 🌐 URL: {Fore.CYAN}{vuln['url'][:80]}{'...' if len(vuln['url']) > 80 else ''}{Style.RESET_ALL}")
+                print(f"{Fore.WHITE}│ 📍 Parameter: {Fore.YELLOW}{vuln['parameter']}{Style.RESET_ALL}")
+                print(f"{Fore.WHITE}│ 🔧 Method: {Fore.MAGENTA}{vuln['method']}{Style.RESET_ALL}")
+                print(f"{Fore.WHITE}│ 🎯 Context: {Fore.GREEN}{vuln['reflection_type']}{Style.RESET_ALL}")
+                print(f"{Fore.WHITE}│ 🚀 Payload: {Fore.MAGENTA + Style.BRIGHT}{vuln['payload'][:60]}{'...' if len(vuln['payload']) > 60 else ''}{Style.RESET_ALL}")
+                if vuln.get('test_url'):
+                    print(f"{Fore.WHITE}│ 🔗 Test URL: {Fore.CYAN}{vuln['test_url'][:60]}{'...' if len(vuln['test_url']) > 60 else ''}{Style.RESET_ALL}")
+                if vuln.get('confidence'):
+                    print(f"{Fore.WHITE}│ 📊 Confidence: {Fore.GREEN + Style.BRIGHT}{vuln['confidence']}{Style.RESET_ALL}")
                 if vuln['cve_related']:
-                    print(f"    Related CVEs: {', '.join(vuln['cve_related'])}")
+                    print(f"{Fore.WHITE}│ 🏷️  CVEs: {Fore.RED}{', '.join(vuln['cve_related'])}{Style.RESET_ALL}")
+                print(f"{Fore.RED}└{'─'*60}{Style.RESET_ALL}")
                 print()
         
-        # Save detailed report
-        report_data = {
-            'scan_info': {
-                'target_url': self.target_url,
-                'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
-                'total_vulnerabilities': len(self.vulnerabilities),
-                'detected_waf': self.detected_waf,
-                'scan_settings': {
-                    'threads': self.threads,
-                    'delay': self.delay,
-                    'browser_verify': self.browser_verify
-                }
-            },
-            'vulnerabilities': self.vulnerabilities
-        }
+        # Save report only if user specified output file
+        if self.output_file:
+            report_data = {
+                'scan_info': {
+                    'target_url': self.target_url,
+                    'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
+                    'total_vulnerabilities': len(self.vulnerabilities),
+                    'detected_waf': self.detected_waf,
+                    'scan_settings': {
+                        'threads': self.threads,
+                        'delay': self.delay,
+                        'browser_verify': self.browser_verify
+                    }
+                },
+                'vulnerabilities': self.vulnerabilities
+            }
+            
+            with open(self.output_file, 'w') as f:
+                json.dump(report_data, f, indent=2)
+            
+            print(f"{Fore.GREEN + Style.BRIGHT}💾 Detailed report saved to: {Fore.CYAN}{self.output_file}{Style.RESET_ALL}")
+        else:
+            print(f"{Fore.YELLOW}💡 Tip: Use -o filename.json to save detailed report{Style.RESET_ALL}")
         
-        with open(self.output_file, 'w') as f:
-            json.dump(report_data, f, indent=2)
-        
-        print(f"Detailed report saved to: {self.output_file}")
+        print(f"{Fore.CYAN + Style.BRIGHT}{'═'*80}{Style.RESET_ALL}\n")
 
 def show_banner():
-    """Display enhanced banner"""
-    banner = f"""
-{Fore.CYAN}    ╔══════════════════════════════════════════════════════╗
-{Fore.CYAN}    ║           🎯 XSSniper - Advanced XSS Scanner          ║
-{Fore.CYAN}    ║              Professional Security Framework          ║
-{Fore.CYAN}    ║                  Enhanced for 2025                    ║
-{Fore.CYAN}    ╚══════════════════════════════════════════════════════╝
-{Fore.MAGENTA}                        Developed by H4mzaX
-{Fore.YELLOW}           ⚡ CVE-Based Detection • Performance Optimized ⚡
-{Style.RESET_ALL}
+    """Display enhanced banner with beautiful colors and ASCII art"""
+    try:
+        # Read the ASCII art from banner.txt
+        with open('banner.txt', 'r') as f:
+            ascii_art = f.read()
+        
+        banner = f"""
+{Fore.CYAN + Style.BRIGHT}{ascii_art}{Style.RESET_ALL}
+{Fore.YELLOW + Style.BRIGHT}           ⚡ CVE-Based Detection • Performance Optimized ⚡{Style.RESET_ALL}
+{Fore.MAGENTA + Style.BRIGHT}                    Enhanced for 2025 - Open Source{Style.RESET_ALL}
+{Fore.GREEN + Style.BRIGHT}                   🎯 Beautiful Output • Payload Visibility 🎯{Style.RESET_ALL}
 """
-    print(banner)
+        print(banner)
+    except FileNotFoundError:
+        # Fallback banner if banner.txt is not found
+        banner = f"""
+{Fore.CYAN + Style.BRIGHT}    ╔══════════════════════════════════════════════════════╗
+{Fore.CYAN + Style.BRIGHT}    ║           🎯 XSSniper - Advanced XSS Scanner          ║
+{Fore.CYAN + Style.BRIGHT}    ║              Professional Security Framework          ║
+{Fore.CYAN + Style.BRIGHT}    ║                  Enhanced for 2025                    ║
+{Fore.CYAN + Style.BRIGHT}    ╚══════════════════════════════════════════════════════╝{Style.RESET_ALL}
+{Fore.MAGENTA + Style.BRIGHT}                        Developed by H4mzaX{Style.RESET_ALL}
+{Fore.YELLOW + Style.BRIGHT}           ⚡ CVE-Based Detection • Performance Optimized ⚡{Style.RESET_ALL}
+{Fore.GREEN + Style.BRIGHT}                   🎯 Beautiful Output • Payload Visibility 🎯{Style.RESET_ALL}
+"""
+        print(banner)
 
 async def main():
     show_banner()
@@ -676,6 +942,14 @@ async def main():
     parser.add_argument('--user-agent', help='Custom User-Agent string')
     parser.add_argument('-o', '--output', help='Output file for results (default: auto-generated)')
     parser.add_argument('--no-browser-verify', action='store_false', dest='browser_verify', help='Disable browser-based verification')
+    parser.add_argument('--waf-bypass', action='store_true', help='Enable WAF bypass techniques')
+    parser.add_argument('--waf', choices=['cloudflare', 'aws', 'akamai', 'modsecurity', 'imperva', 'f5', 'barracuda', 'fortinet'], help='Force specific WAF bypass mode')
+    parser.add_argument('--encoding', help='Encoding methods: url,html,unicode,base64 (comma-separated)')
+    parser.add_argument('--timeout', type=int, default=15, help='Request timeout in seconds (default: 15)')
+    parser.add_argument('--discover-params', action='store_true', help='Enable parameter discovery')
+    parser.add_argument('--all-payloads', action='store_true', help='Use all payload categories')
+    parser.add_argument('--report-format', choices=['json', 'html', 'xml'], default='json', help='Output format (default: json)')
+    parser.add_argument('--verify-ssl', action='store_true', help='Enable SSL certificate verification (default: disabled)')
     
     args = parser.parse_args()
     
@@ -702,7 +976,14 @@ async def main():
                         verbose=args.verbose,
                         user_agent=args.user_agent,
                         output_file=args.output,
-                        browser_verify=args.browser_verify
+                        browser_verify=args.browser_verify,
+                        verify_ssl=args.verify_ssl,
+                        waf_bypass=args.waf_bypass,
+                        forced_waf=args.waf,
+                        encoding_methods=args.encoding.split(',') if args.encoding else [],
+                        discover_params=args.discover_params,
+                        all_payloads=args.all_payloads,
+                        timeout=args.timeout
                     )
                     
                     await scanner.scan(crawl=args.crawl, max_depth=args.max_depth)
@@ -718,7 +999,14 @@ async def main():
                 verbose=args.verbose,
                 user_agent=args.user_agent,
                 output_file=args.output,
-                browser_verify=args.browser_verify
+                browser_verify=args.browser_verify,
+                verify_ssl=args.verify_ssl,
+                waf_bypass=args.waf_bypass,
+                forced_waf=args.waf,
+                encoding_methods=args.encoding.split(',') if args.encoding else [],
+                discover_params=args.discover_params,
+                all_payloads=args.all_payloads,
+                timeout=args.timeout
             )
             
             await scanner.scan(crawl=args.crawl, max_depth=args.max_depth)
